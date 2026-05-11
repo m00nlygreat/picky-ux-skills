@@ -1,6 +1,0 @@
-interface:
-  display_name: "Wireframe Viewer"
-  short_description: "Build HTML wireframes from STN Markdown."
-  default_prompt: "Use $wireframe to generate and preview a single HTML wireframe viewer from ./design STN files."
-policy:
-  allow_implicit_invocation: true
