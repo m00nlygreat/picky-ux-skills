@@ -9,15 +9,16 @@ Generate `./wireframe.html` directly from STN design files in `./design/`.
 
 ## Core Contract
 
-This skill is for rapid GUI prototyping from STN. The output must look like an application wireframe:
+This skill is for rapid GUI prototyping from STN. The output must look like a real application wireframe, not a visualization of the STN tree.
 
-- Render the screen structure as recognizable UI: app bars, sidebars, panes, toolbars, tables, cards, lists, tabs, forms, actions, and content areas.
-- Do not render STN as a nested outline, raw block tree, or inline label dump.
-- Use the STN tree as layout intent. Parent/child/sibling relationships determine screen composition.
-- Prefer semantic GUI containers (`shell`, `workspace`, `pane`, `toolbar`, `table`, `tabs`) over `generic`.
-- Use `generic` and `generic-leaf` only when no useful GUI role can be inferred.
+- Render the screen structure as recognizable product UI: app bars, navigation, panes, toolbars, tables, cards, lists, tabs, forms, actions, assistant panels, empty states, and content areas.
+- Do not render STN as a nested outline, raw block tree, inline label dump, or generic placeholder stack.
+- Treat STN as semantic intent. Parent/child/sibling relationships, quoted strings, bindings, variants, conditional markers, and responsive annotations together determine the interface.
+- Parse STN syntax deterministically, then let the agent infer UI intent. Do not build exact-name mapping tables as the primary rendering strategy.
+- The viewer template provides chrome, controls, and a baseline wireframe vocabulary. The generated wireframe output is **not limited** to the CSS already present in `viewer.html`.
+- Generate additional document-specific CSS whenever it improves fidelity, as long as it keeps the output wireframe-like rather than high-fidelity visual design.
 
-No generator script is used. The agent reads the design files, classifies the STN nodes, copies the canonical viewer shell, injects generated payloads, and writes `wireframe.html` itself.
+No standalone generator script owns the semantic rendering. The agent reads the design files, builds a syntax tree, infers UI intent, copies the canonical viewer shell, injects generated CSS and document payloads, and writes `wireframe.html`.
 
 ## STN Reference
 
@@ -32,6 +33,42 @@ Use `$stn` as the canonical syntax reference before interpreting STN. `$wirefram
 - Quoted strings, `{dataBinding}`, `[variant-or-icon]`, and `(state-or-layout)` are semantic hints for visual rendering.
 
 Do not treat STN as a raw outline. Preserve the source text in the viewer, but render the semantic UI structure.
+
+## Rendering Philosophy
+
+### Syntax Parser vs Semantic Interpreter
+
+Use two distinct mental passes:
+
+1. **Syntax parse:** Recover the tree and metadata from Markdown indentation, imports, component references, quoted text, bindings, variants, hints, optional markers, and responsive annotations. This pass can be deterministic.
+2. **UI intent interpretation:** Infer what kind of product surface the tree describes. This pass is agentic. It must use context and structure, not exact string equality.
+
+Do not add brittle rules such as "if node text equals `DataTable`, output this exact HTML" as the main design. Instead infer archetypes from multiple signals:
+
+- Container role from position: app shell child, header child, collection child, panel child, form child.
+- Sibling pattern: title + search + filters + rows implies collection management; tabs + body implies tabbed panel; avatar + status + sections implies detail profile.
+- Binding names and instruction strings: `{instructors}`, `{selectedInstructor}`, `{alerts}`, `{pagination}` inform sample data and content density.
+- Variants and icons: `[primary]`, `[table]`, `[calendar]`, `[filter]`, `[bell]` affect control appearance.
+- Responsive annotations: `@mobile(hidden)` and `@mobile(-> ...)` affect mobile preview.
+
+### UI Intent Graph
+
+Before writing HTML, form a compact UI intent graph for each document. It should include:
+
+- `surface`: screen, app shell, collection surface, detail panel, assistant panel, card list, form, dashboard, timeline, settings, etc.
+- `layout`: column, split pane, three-pane shell, table-centric workspace, mobile single-column replacement, etc.
+- `regions`: navigation, top bar, collection toolbar, content body, detail drawer, right assistant panel, footer.
+- `interactions`: tabs, segment controls, filters, sort, search, selection, pagination, row actions, collapse controls.
+- `sampleData`: realistic domain examples derived from screen/component names, quoted strings, and bindings.
+- `confidenceNotes`: any uncertainty to report in the final answer.
+
+Keep this graph implicit or in `wf-data`; do not create separate temp files.
+
+### Rich Fallback
+
+If a node cannot be classified precisely, still render a useful UI approximation. A rich fallback should include a label, content density, one or more representative rows/cards/actions, and a clear visual role. Avoid empty rectangles unless the source explicitly asks for a placeholder/skeleton/loading state.
+
+Visible bindings such as `{row.primary}` should not dominate the preview. Prefer realistic sample values in the preview and preserve original bindings in `title`, `data-binding`, subtle captions, source panel text, or `wf-data`.
 
 ## Files
 
@@ -77,26 +114,23 @@ Also resolve STN-specific structure:
 - Preserve optional markers and responsive annotations as metadata; render the default desktop structure unless generating mobile-specific preview behavior.
 - Treat malformed but recognizable STN as renderable, and report uncertain classifications instead of failing silently.
 
-### 3. Classify Nodes Into Render Types
+### 3. Infer UI Intent
 
-Classify each node using the render type vocabulary below.
+Infer UI intent from the parsed tree. Use the render type vocabulary as a shared language, not as a closed set of templates.
 
-Apply these rules in order:
+Required interpretation work:
 
-1. Node semantics: `AppShell` -> `shell`, `TopAppBar` -> `header`, `DataTable` -> `table`.
-2. Parent context: children under `AppShell` are usually `sidebar`, `workspace`, or `pane`.
-3. Sibling pattern: repeated row-like children under `DataTable` -> `table-row`; tabs under `ViewTabs` -> `navitem`.
-4. Explicit label: `Button: Log Out` -> `button`; the label text does not change the type.
-5. GUI fidelity: choose the type that creates the closest real UI layout, not the type that mirrors the STN outline.
-6. Fallback: use `generic` or `generic-leaf` only when no meaningful GUI role is implied.
+- Identify the primary surface archetype for each document.
+- Identify main regions and their relative layout.
+- Decide which children are structural containers and which are visible controls/content.
+- Resolve component references into meaningful previews where useful.
+- Synthesize realistic sample labels and row/card content from bindings and domain text.
+- Preserve binding provenance without making raw `{...}` tokens the main visible content.
+- Prefer high-fidelity wireframe primitives over `generic` and `generic-leaf`.
 
-Constraints:
+Avoid brittle exact-name rendering. Names can inform the decision, but parent context, children, siblings, variants, and bindings must carry at least as much weight as the raw node text.
 
-- Same node text in the same file should use the same type.
-- Same node text may differ across files if context differs.
-- Component roots may use `component` when previewed as reusable UI, or `screen` when the component needs a full-frame preview.
-
-### 4. Copy Viewer Shell, Then Inject Payloads
+### 4. Copy Viewer Shell, Then Inject CSS And Payloads
 
 Write a complete self-contained HTML document to `./wireframe.html`.
 
@@ -104,10 +138,13 @@ Do not visually inspect `viewer.html` and recreate it from memory. First copy `.
 
 Mandatory shell-preservation rules:
 
-- Preserve the copied viewer chrome, canvas, source panel, controls, JavaScript, and `.wf-*` component styles unless the user explicitly asks to change the viewer itself.
+- Preserve the copied viewer chrome, canvas, source panel, controls, and JavaScript unless the user explicitly asks to change the viewer itself.
+- Treat `.wf-*` styles as a fallback starting point, not a constraint on generated output.
+- Generate additional CSS classes for the actual wireframe when the STN calls for richer layout or domain-specific controls.
 - Preserve zoom, fit, width slider, mouse wheel zoom, and space/middle-button pan behavior exactly as provided by `template/viewer.html`.
 - Replace only these template slots during normal generation:
   - `<meta name="wf-generated" content="">` with the current timestamp.
+  - `<style id="wf-generated-style"></style>` with generated wireframe CSS when needed.
   - `<script id="wf-docs-tpl" type="application/json">[]</script>` with the generated documents payload.
   - `<script id="wf-data" type="application/json">[]</script>` with render type metadata when useful.
 - If viewer shell changes are required, edit `template/viewer.html` first, then copy the updated shell to `wireframe.html` and inject the payloads.
@@ -119,7 +156,7 @@ The document must include:
 - A sidebar navigation for Global, Screens, and Components.
 - A main preview canvas with desktop/mobile/fit controls.
 - A source panel showing the STN source for the selected document.
-- Inline CSS and JavaScript.
+- Inline viewer CSS, generated wireframe CSS, and JavaScript.
 - A JSON payload such as `<script id="wf-docs-tpl" type="application/json">...</script>` containing each document's rendered HTML and source.
 - Optional `<script id="wf-data" type="application/json">...</script>` with render type maps for future incremental updates.
 
@@ -136,6 +173,8 @@ Verify:
 - At least one screen/component navigation click works.
 - Desktop, Mobile, Fit, width slider, wheel zoom, and space/middle-button pan controls still work.
 - GUI structures such as app shell, panes, toolbars, tables, cards, or tabs render as visual interface elements.
+- Rich structures are visually recognizable without reading the STN source panel.
+- Raw bindings such as `{row.primary}` are not the dominant preview content when realistic sample data can be inferred.
 
 ### 6. Report
 
@@ -154,10 +193,12 @@ When `wireframe.html` already exists:
 2. Use `git diff --name-only HEAD@{"<wf-generated timestamp>"} -- design/` when available to identify changed design files.
 3. If no design files changed and the viewer structure does not need changes, report `wireframe is up to date`.
 4. Otherwise, read the changed files, regenerate the documents payload, copy `template/viewer.html` to `wireframe.html`, and inject the updated payload slots.
-5. Preserve previous render type decisions from `wf-data` when they still match the STN context.
+5. Preserve previous UI intent decisions from `wf-data` when they still match the STN context.
 6. Do not patch the existing `wireframe.html` shell as the primary update path; recopy the template so viewer controls stay in sync.
 
 ## Render Type Vocabulary
+
+Use this vocabulary for intent metadata and fallback rendering. It is not a restriction on generated CSS class names or richer composed UI.
 
 ### Layout
 

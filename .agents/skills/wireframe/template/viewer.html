@@ -91,6 +91,7 @@ button{font:inherit}
 .mobile .wf-table-row{grid-template-columns:28px 1fr 76px}
 .mobile .wf-table-row>*:nth-child(n+4){display:none}
   </style>
+  <style id="wf-generated-style"></style>
 </head>
 <body>
 <div class="app">
@@ -140,6 +141,7 @@ const fit=document.getElementById('fit');
 const width=document.getElementById('width');
 const widthLabel=document.getElementById('width-label');
 let current=docs.findIndex(d=>d.kind==='screen');
+let currentMode='desktop';
 let zoom=1;
 let spaceDown=false;
 let panning=false;
@@ -167,12 +169,14 @@ function select(i){
     return;
   }
   current=i;title.textContent=d.name;pathEl.textContent=d.path;source.textContent=d.source;
-  frame.className='frame '+(d.kind==='component'?'component':'');
+  frame.className=['frame',d.kind==='component'?'component':'',d.frameClass||'',currentMode==='mobile'?'mobile':''].filter(Boolean).join(' ');
+  frame.dataset.docKind=d.kind||'';
   frame.innerHTML=d.html;
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.index)===i));
   requestAnimationFrame(centerFrame);
 }
 function setMode(mode){
+  currentMode=mode;
   frame.classList.toggle('mobile',mode==='mobile');
   desktop.classList.toggle('active',mode==='desktop');
   mobile.classList.toggle('active',mode==='mobile');
