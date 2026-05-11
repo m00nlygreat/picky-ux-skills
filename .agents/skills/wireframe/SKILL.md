@@ -24,7 +24,7 @@ No generator script is used. The agent reads the design files, classifies the ST
 - `./design/GLOBAL.md`: optional shared layout STN.
 - `./design/*.md`: screen STN files.
 - `./design/components/*.md`: reusable component STN files.
-- `.agents/skills/wireframe/viewer.html`: reusable baseline viewer shell, CSS, and JavaScript. Read it before writing `wireframe.html`.
+- `.agents/skills/wireframe/template/viewer.html`: reusable baseline viewer shell, CSS, and JavaScript. Read it before writing `wireframe.html`.
 - `./wireframe.html`: final self-contained HTML output written directly by the agent.
 - `./CURRENT.md`: current implementation notes and decisions.
 
@@ -78,13 +78,13 @@ Constraints:
 
 Write a complete self-contained HTML document to `./wireframe.html`.
 
-Start from `.agents/skills/wireframe/viewer.html` whenever possible:
+Start from `.agents/skills/wireframe/template/viewer.html` whenever possible:
 
 - Reuse its viewer chrome, canvas, source panel, controls, JavaScript, and `.wf-*` component styles.
 - Replace `<meta name="wf-generated" content="">` with the current timestamp.
 - Replace `<script id="wf-docs-tpl" type="application/json">[]</script>` with the generated documents payload.
 - Replace `<script id="wf-data" type="application/json">[]</script>` with render type metadata when useful.
-- Keep style changes in `viewer.html` first, then copy the updated shell into `wireframe.html`.
+- Keep style changes in `template/viewer.html` first, then copy the updated shell into `wireframe.html`.
 
 The document must include:
 

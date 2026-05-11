@@ -1,493 +1,245 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Wireframe Viewer</title>
-<style>
-:root {
-  --nav-w: 260px;
-  --bg: #f0f2f5;
-  --panel: #ffffff;
-  --ink: #1b1f24;
-  --muted: #68707c;
-  --line: #d0d7e0;
-  --accent: #2563eb;
-  --accent-soft: #e8f0ff;
-  --bar: #e8eaf0;
-  --bar-border: #c8cdd8;
-  --btn-bg: #f3f4f6;
-  --btn-border: #b8c0cc;
-  --input-bg: #ffffff;
-  --badge-bg: #e0f2fe;
-  --badge-ink: #0369a1;
-  --metric-bg: #f8fafc;
-  --sidebar-bg: #f3f4f6;
-  --card-bg: #ffffff;
-  --shadow: 0 1px 3px rgba(0,0,0,.10);
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: Inter, "Pretendard", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  font-size: 14px;
-}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="wf-generated" content="">
+  <title>Wireframe Viewer</title>
+  <style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:#c8d0db;color:#1b1f24;font-size:14px}
+button{font:inherit}
+.app{display:flex;height:100vh;overflow:hidden}
+.nav{width:236px;flex:0 0 auto;background:#fff;border-right:1px solid #d0d7e0;display:flex;flex-direction:column}
+.nav-head{padding:16px 14px 12px;border-bottom:1px solid #d0d7e0}
+.brand{font-weight:800;font-size:15px}
+.sub{margin-top:3px;color:#68707c;font-size:11px}
+.nav-list{overflow:auto;padding:8px}
+.group{margin:14px 6px 5px;color:#68707c;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.nav-btn{width:100%;border:0;background:transparent;text-align:left;padding:8px 10px;border-radius:7px;cursor:pointer;color:#1b1f24}
+.nav-btn:hover{background:#f0f4f8}
+.nav-btn.active{background:#e8f0ff;color:#2563eb;font-weight:700}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:52px;flex:0 0 auto;background:#fff;border-bottom:1px solid #d0d7e0;display:flex;align-items:center;gap:12px;padding:8px 14px}
+.doc-meta{flex:1;min-width:0}
+.doc-title{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-path{font-size:11px;color:#68707c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controls{display:flex;align-items:center;gap:8px}
+.seg{display:flex;border:1px solid #d0d7e0;border-radius:7px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 10px;cursor:pointer}
+.seg button.active{background:#1b1f24;color:#fff}
+.range{display:flex;align-items:center;gap:6px;color:#68707c;font-size:11px}
+.range input{width:110px;accent-color:#2563eb}
+.work{flex:1;min-height:0;display:flex;gap:10px;padding:12px;overflow:hidden}
+.canvas{flex:1;min-width:0;overflow:auto;border:1px solid #d0d7e0;border-radius:8px;background:#c8d0db;cursor:default}
+.canvas.space-pan{cursor:grab}
+.canvas.panning{cursor:grabbing;user-select:none}
+.stage{position:relative;min-width:2200px;min-height:1800px}
+.frame{position:absolute;width:960px;min-height:680px;background:#fff;border:1px solid #c0cad8;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.15);overflow:hidden;transform-origin:top left}
+.frame.component{padding:18px}
+.source{width:310px;flex:0 0 auto;background:#fff;border:1px solid #d0d7e0;border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
+.source-label{padding:9px 12px;border-bottom:1px solid #d0d7e0;color:#68707c;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.source pre{margin:0;padding:12px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;line-height:1.55}
 
-/* ── Viewer shell ──────────────────────────────────────────────────── */
-.app {
-  display: grid;
-  grid-template-columns: var(--nav-w) 1fr;
-  min-height: 100vh;
-  transition: grid-template-columns .2s ease;
-}
-.sidebar {
-  border-right: 1px solid var(--line); background: var(--panel);
-  padding: 20px 14px; overflow-y: auto; overflow-x: hidden;
-  min-width: 0; transition: padding .2s ease;
-}
-.brand { margin: 0 0 2px; font-size: 17px; font-weight: 700; white-space: nowrap; }
-.sub { margin: 0 0 16px; color: var(--muted); font-size: 11px; white-space: nowrap; }
-.group-title {
-  margin: 16px 8px 6px; color: var(--muted); font-size: 10px;
-  font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap;
-}
-.nav-button {
-  width: 100%; border: 0; border-radius: 7px; background: transparent;
-  color: var(--ink); display: block; margin: 2px 0; padding: 8px 10px;
-  text-align: left; cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.nav-button:hover { background: #eef1f6; }
-.nav-button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-
-.main { min-width: 0; padding: 16px 20px 20px; display: flex; flex-direction: column; }
-
-/* toolbar */
-.toolbar-bar {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 12px; flex-wrap: wrap;
-}
-.title { flex: 1; min-width: 0; }
-.title h2 { margin: 0; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.title p { margin: 2px 0 0; color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-
-/* icon toggle buttons */
-.icon-btn {
-  border: 1px solid var(--line); border-radius: 7px;
-  background: var(--panel); padding: 5px 10px; cursor: pointer;
-  color: var(--muted); line-height: 1; display: inline-flex; align-items: center;
-  gap: 5px; font-size: 12px; white-space: nowrap;
-}
-.icon-btn:hover { background: #eef1f6; color: var(--ink); }
-.icon-btn.on { background: var(--accent-soft); color: var(--accent); border-color: #c7d9ff; }
-
-/* preset seg */
-.seg {
-  border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
-  display: flex; padding: 2px;
-}
-.seg button {
-  border: 0; border-radius: 5px; background: transparent;
-  cursor: pointer; padding: 4px 9px; font-size: 11px; color: var(--muted); white-space: nowrap;
-}
-.seg button.active { background: var(--ink); color: white; }
-
-/* width slider control */
-.width-ctrl {
-  display: flex; align-items: center; gap: 7px;
-  border: 1px solid var(--line); border-radius: 7px;
-  background: var(--panel); padding: 4px 10px;
-}
-.width-ctrl input[type=range] {
-  width: 110px; accent-color: var(--accent); cursor: pointer; margin: 0;
-  height: 4px;
-}
-.w-label { font-size: 11px; color: var(--muted); min-width: 40px; text-align: right; }
-
-/* workspace */
-.workspace-viewer {
-  display: grid;
-  grid-template-columns: 1fr minmax(240px, 360px);
-  gap: 12px;
-  flex: 1;
-}
-.workspace-viewer.source-off { grid-template-columns: 1fr; }
-
-.preview, .source-panel {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 8px; min-width: 0;
-}
-.preview { padding: 16px; overflow: auto; }
-.source-panel { overflow: hidden; }
-.source-panel.hidden { display: none; }
-.source-panel pre {
-  margin: 0; height: calc(100vh - 130px); overflow: auto;
-  padding: 14px; white-space: pre-wrap; font-size: 11px; line-height: 1.55;
-  color: var(--muted);
-}
-
-/* wireframe frame */
-.frame {
-  background: #f7f8fa; border: 1px solid #ccd2dc; border-radius: 10px;
-  margin: 0 auto; min-height: 560px; overflow: hidden;
-  transition: max-width .15s ease;
-  width: 100%;
-}
-.wf-empty { color: var(--muted); padding: 24px; text-align: center; }
-
-/* ── Layout shells ─────────────────────────────────────────────────── */
-.wf-screen { display: flex; flex-direction: column; height: 100%; min-height: 560px; }
-.wf-layout { display: flex; flex: 1; overflow: hidden; }
-.wf-workspace { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-.wf-sidebar {
-  background: var(--sidebar-bg); padding: 10px 8px;
-  display: flex; flex-direction: column; gap: 6px;
-  flex-shrink: 0; overflow-y: auto;
-}
-.wf-sidebar-left { width: 180px; border-right: 1px solid var(--line); }
-.wf-sidebar-right { width: 220px; border-left: 1px solid var(--line); }
-.wf-sidebar-label { color: var(--muted); font-size: 11px; padding: 4px 6px; }
-.wf-stepview {
-  flex: 1; border: 1px dashed var(--line); border-radius: 6px; margin: 4px; padding: 8px;
-}
-.wf-stepview-label {
-  font-size: 10px; color: var(--muted); font-weight: 600;
-  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px;
-}
-
-/* ── Navigation bars ───────────────────────────────────────────────── */
-.wf-topbar {
-  background: var(--bar); border-bottom: 1px solid var(--bar-border);
-  padding: 0 14px; height: 48px; display: flex; align-items: center;
-  gap: 8px; flex-shrink: 0;
-}
-.wf-topbar-brand { font-weight: 700; font-size: 15px; margin-right: 8px; }
-.wf-navbar {
-  background: var(--bar); border-bottom: 1px solid var(--bar-border);
-  padding: 0 12px; height: 40px; display: flex; align-items: center; gap: 6px;
-}
-.wf-bottombar {
-  background: var(--bar); border-top: 1px solid var(--bar-border);
-  padding: 0 12px; height: 48px; display: flex; align-items: center;
-  gap: 8px; justify-content: space-around; flex-shrink: 0;
-}
-.wf-toolbar {
-  background: var(--panel); border-bottom: 1px solid var(--line);
-  padding: 8px 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-}
-.wf-toolbar-title { font-weight: 600; }
-.wf-filterbar {
-  background: #fafbfc; border-bottom: 1px solid var(--line);
-  padding: 6px 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-}
-.wf-navmenu { display: flex; flex-direction: column; gap: 2px; padding: 4px 0; }
-.wf-navitem {
-  padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--ink);
-}
-.wf-navitem:hover { background: #e8eaf0; }
-.wf-header-actions { display: flex; gap: 6px; align-items: center; }
-
-/* ── Tabs ──────────────────────────────────────────────────────────── */
-.wf-tabgroup {
-  display: flex; gap: 2px; padding: 4px 6px;
-  border-bottom: 1px solid var(--line); background: var(--panel); flex-shrink: 0;
-}
-.wf-tab {
-  border: 1px solid var(--btn-border); border-radius: 6px; background: var(--btn-bg);
-  padding: 5px 14px; cursor: pointer; font-size: 12px; color: var(--muted);
-}
-.wf-tab.wf-tab-active {
-  background: var(--panel); color: var(--accent); border-color: var(--accent); font-weight: 600;
-}
-
-/* ── Buttons ───────────────────────────────────────────────────────── */
-.wf-btn {
-  border: 1px solid var(--btn-border); border-radius: 6px; background: var(--btn-bg);
-  padding: 6px 14px; cursor: pointer; font-size: 12px; color: var(--ink); white-space: nowrap;
-}
-.wf-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.wf-btn-secondary { background: var(--panel); color: var(--accent); border-color: var(--accent); }
-.wf-btn-ghost { background: transparent; border-color: transparent; color: var(--muted); }
-.wf-btn-tool {
-  background: var(--btn-bg); color: var(--muted); border-color: var(--btn-border);
-  padding: 4px 10px; font-size: 11px;
-}
-.wf-btn-active { background: var(--accent); color: #fff; }
-.wf-btn-sm { padding: 3px 8px; font-size: 11px; }
-.wf-btn-icon {
-  border: 1px solid var(--btn-border); border-radius: 6px; background: var(--btn-bg);
-  width: 30px; height: 30px; display: inline-flex; align-items: center;
-  justify-content: center; cursor: pointer; font-size: 13px; color: var(--muted); flex-shrink: 0;
-}
-.wf-menu-trigger {
-  border: 1px solid var(--btn-border); border-radius: 6px; background: var(--btn-bg);
-  padding: 4px 8px; cursor: pointer; font-size: 12px; color: var(--muted);
-}
-
-/* ── Inputs ────────────────────────────────────────────────────────── */
-.wf-input {
-  border: 1px solid var(--btn-border); border-radius: 6px; background: var(--input-bg);
-  padding: 6px 10px; display: flex; align-items: center; gap: 6px; min-width: 140px;
-}
-.wf-input-search { background: #f8fafc; }
-.wf-search-icon { color: var(--muted); font-size: 15px; }
-.wf-placeholder { color: var(--muted); font-size: 12px; }
-.wf-select {
-  border: 1px solid var(--btn-border); border-radius: 6px; background: var(--input-bg);
-  padding: 6px 10px; display: flex; align-items: center; justify-content: space-between;
-  min-width: 120px;
-}
-.wf-caret { color: var(--muted); font-size: 10px; }
-.wf-checkbox { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
-.wf-checkbox-box {
-  width: 14px; height: 14px; border: 1.5px solid var(--btn-border); border-radius: 3px; flex-shrink: 0;
-}
-.wf-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; }
-.wf-toggle-track {
-  width: 34px; height: 18px; background: #d0d7e0; border-radius: 9px; position: relative; flex-shrink: 0;
-}
-.wf-toggle-thumb {
-  width: 14px; height: 14px; background: #fff; border-radius: 50%;
-  position: absolute; top: 2px; left: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.2);
-}
-.wf-radio { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
-.wf-radio-dot {
-  width: 14px; height: 14px; border: 1.5px solid var(--btn-border); border-radius: 50%; flex-shrink: 0;
-}
-
-/* ── Media ─────────────────────────────────────────────────────────── */
-.wf-avatar {
-  width: 36px; height: 36px; background: #c8d0dc; border-radius: 50%; flex-shrink: 0;
-}
-.wf-avatar-sm { width: 26px; height: 26px; }
-.wf-image {
-  background: #dde3ec; border-radius: 6px; min-height: 72px;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--muted); font-size: 12px; width: 100%;
-}
-.wf-icon { color: var(--muted); font-size: 14px; display: inline-block; }
-
-/* ── Data display ──────────────────────────────────────────────────── */
-.wf-table { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; width: 100%; }
-.wf-table-header-row {
-  display: flex; background: #f0f2f6; border-bottom: 1px solid var(--line);
-}
-.wf-table-row { display: flex; border-bottom: 1px solid #eef0f4; }
-.wf-table-row:last-child { border-bottom: 0; }
-.wf-table-cell {
-  flex: 1; padding: 7px 10px; font-size: 12px; min-width: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.wf-table-header-row .wf-table-cell { font-weight: 600; color: var(--muted); font-size: 11px; }
-.wf-list { display: flex; flex-direction: column; gap: 2px; }
-.wf-list-item {
-  padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
-  background: var(--card-bg); font-size: 12px; display: flex; align-items: center; gap: 8px;
-}
-.wf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-.wf-grid-cell {
-  border: 1px solid var(--line); border-radius: 6px; background: var(--card-bg);
-  padding: 10px; font-size: 12px; text-align: center; color: var(--muted);
-}
-.wf-card {
-  border: 1px solid var(--line); border-radius: 8px; background: var(--card-bg);
-  padding: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 6px;
-}
-.wf-metric {
-  border: 1px solid var(--line); border-radius: 8px; background: var(--metric-bg);
-  padding: 12px 14px; min-width: 100px; flex: 1;
-}
-.wf-metric-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
-.wf-metric-value { font-size: 22px; font-weight: 700; }
-.wf-badge {
-  display: inline-block; background: var(--badge-bg); color: var(--badge-ink);
-  border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 600;
-}
-.wf-tag {
-  display: inline-block; background: #f0f4ff; color: #3b5bdb;
-  border-radius: 4px; padding: 2px 7px; font-size: 11px;
-}
-.wf-tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
-.wf-person-cell { display: flex; align-items: center; gap: 8px; }
-.wf-pagination { display: flex; gap: 4px; align-items: center; }
-.wf-timeline { display: flex; flex-direction: column; gap: 10px; padding: 8px 0; }
-.wf-timeline-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-.wf-timeline-dot {
-  width: 10px; height: 10px; border: 2px solid var(--accent); border-radius: 50%; flex-shrink: 0;
-}
-
-/* ── Typography ────────────────────────────────────────────────────── */
-.wf-title { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: var(--ink); }
-.wf-text { margin: 0 0 4px; font-size: 13px; color: var(--ink); }
-.wf-caption { margin: 0 0 2px; font-size: 11px; color: var(--muted); }
-.wf-label-text { font-size: 12px; font-weight: 600; }
-
-/* ── Misc ──────────────────────────────────────────────────────────── */
-.wf-divider { border: none; border-top: 1px solid var(--line); margin: 8px 0; }
-.wf-optional { opacity: .55; }
-.wf-section {
-  display: flex; flex-direction: column; gap: 8px; padding: 10px;
-  background: var(--panel); border-radius: 8px;
-}
-.wf-section-label {
-  font-size: 10px; color: var(--muted); font-weight: 700;
-  text-transform: uppercase; letter-spacing: .07em;
-}
-.wf-section-bar {
-  background: #f8fafc; border: 1px solid var(--line); border-radius: 6px;
-  padding: 8px 12px; display: flex; align-items: center; gap: 8px;
-}
-.wf-generic {
-  border: 1px dashed var(--line); border-radius: 6px;
-  padding: 8px 10px; font-size: 12px; color: var(--muted); background: #fafbfc;
-}
-.wf-modal {
-  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
-  box-shadow: 0 4px 16px rgba(0,0,0,.12); max-width: 480px; margin: 12px auto;
-}
-.wf-modal-header { padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--line); }
-.wf-modal-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
-</style>
+.wf-screen{min-height:680px;background:#fff;display:flex;flex-direction:column}
+.wf-header{height:58px;flex:0 0 auto;background:#f5f7fa;border-bottom:1.5px solid #dde3ec;display:flex;align-items:center;gap:10px;padding:0 16px}
+.wf-icon{width:24px;height:24px;border-radius:5px;background:#c0cad8;flex:0 0 auto}
+.wf-logo{background:#1b1f24;color:#fff;border-radius:5px;padding:6px 10px;font-size:12px;font-weight:850;letter-spacing:.03em}
+.wf-search{height:38px;min-width:190px;flex:1;border:1.5px solid #c0cad8;border-radius:19px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 13px;color:#9aa4b2;font-size:13px}
+.wf-search::before{content:"";width:13px;height:13px;border:2px solid #9aa4b2;border-radius:50%;display:block;box-shadow:8px 8px 0 -6px #9aa4b2}
+.wf-button{height:36px;border:0;border-radius:7px;background:#2563eb;color:#fff;padding:0 14px;font-weight:700;font-size:12px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.wf-button.secondary{background:#fff;color:#3c4452;border:1.5px solid #c0cad8}
+.wf-shell{flex:1;min-height:0;display:grid;grid-template-columns:200px minmax(0,1fr) 320px;overflow:hidden}
+.wf-sidebar{background:#f5f7fa;border-right:1.5px solid #dde3ec;padding:12px;display:flex;flex-direction:column;gap:10px}
+.wf-nav-lines{display:flex;flex-direction:column;gap:8px}
+.wf-nav-line{height:28px;border-radius:6px;background:#e4e9f0}
+.wf-badge{align-self:flex-start;min-width:28px;height:22px;border-radius:999px;background:#e8f0ff;color:#2563eb;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;padding:0 8px}
+.wf-workspace{min-width:0;display:flex;flex-direction:column;gap:12px;padding:16px;overflow:auto}
+.wf-pane{min-width:0;background:#fafbfc;border-left:1.5px solid #dde3ec;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+.wf-toolbar{min-height:56px;border:1.5px solid #dde3ec;border-radius:8px;background:#fff;display:flex;align-items:center;gap:10px;padding:10px 12px;flex-wrap:wrap}
+.wf-toolbar-title{font-size:16px;font-weight:800;margin-right:auto}
+.wf-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.wf-tabs{min-height:36px;border:1.5px solid #dde3ec;border-radius:8px;background:#f5f7fa;padding:3px;display:flex;gap:4px;align-items:center}
+.wf-tab{height:28px;min-width:72px;border-radius:6px;background:#dde3ec}
+.wf-tab.active{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.wf-section{border:1.5px dashed #c0cad8;border-radius:8px;background:#fafbfc;padding:12px;display:flex;flex-direction:column;gap:10px}
+.wf-section-label{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.06em;color:#8892a4}
+.wf-title{font-size:18px;font-weight:850;line-height:1.25}
+.wf-text{font-size:14px;color:#3c4452;line-height:1.45}
+.wf-caption{font-size:12px;color:#68707c;line-height:1.35}
+.wf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.wf-card{background:#fff;border:1.5px solid #dde3ec;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:12px;display:flex;flex-direction:column;gap:8px}
+.wf-list{background:#fff;border:1.5px solid #dde3ec;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.wf-list-row{min-height:48px;border-bottom:1px solid #eef2f6;display:flex;align-items:center;gap:10px;padding:8px 12px}
+.wf-list-row:last-child{border-bottom:0}
+.wf-dot{width:8px;height:8px;border-radius:50%;background:#c0cad8}
+.wf-avatar{width:52px;height:52px;border-radius:50%;background:#dde3ec;border:1.5px solid #c0cad8}
+.wf-chip{display:inline-flex;align-items:center;height:22px;border-radius:999px;background:#e8f0ff;color:#2563eb;padding:0 8px;font-size:11px;font-weight:800}
+.wf-check{width:18px;height:18px;border-radius:4px;border:2px solid #c0cad8;background:#fff;flex:0 0 auto}
+.wf-table{background:#fff;border:1.5px solid #dde3ec;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.wf-table-row{display:grid;grid-template-columns:40px 1.4fr 1fr 1fr 112px 44px;gap:10px;align-items:center;min-height:48px;padding:8px 12px;border-bottom:1px solid #eef2f6}
+.wf-table-row:last-child{border-bottom:0}
+.wf-table-row.header{background:#f5f7fa;font-weight:800;color:#68707c;font-size:12px}
+.wf-footer{height:42px;border-top:1.5px solid #dde3ec;background:#f5f7fa;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+.wf-placeholder{height:14px;max-width:220px;border-radius:999px;background:#dde3ec}
+.wf-mobile-flow{display:none;border-top:1px dashed #c0cad8;padding:12px;gap:10px;background:#fafbfc}
+.wf-step{height:42px;border-radius:8px;background:#fff;border:1px solid #dde3ec;display:flex;align-items:center;justify-content:center;color:#68707c;font-weight:700}
+.mobile .wf-shell{grid-template-columns:1fr}
+.mobile .wf-sidebar,.mobile .wf-pane{display:none}
+.mobile .wf-mobile-flow{display:flex;flex-direction:column}
+.mobile .wf-table-row{grid-template-columns:28px 1fr 76px}
+.mobile .wf-table-row>*:nth-child(n+4){display:none}
+  </style>
 </head>
 <body>
-<div class="app" id="app">
-  <aside class="sidebar" id="sidebar">
-    <h1 class="brand">Wireframe</h1>
-    <p class="sub">STN Viewer</p>
-    <div id="nav"></div>
+<div class="app">
+  <aside class="nav">
+    <div class="nav-head">
+      <div class="brand">Wireframe Viewer</div>
+      <div class="sub">Direct STN prototype</div>
+    </div>
+    <div class="nav-list" id="nav"></div>
   </aside>
   <main class="main">
-    <div class="toolbar-bar">
-      <button class="icon-btn on" id="nav-toggle" title="네비게이션 패널 접기/펼치기">☰ Nav</button>
-      <div class="title">
-        <h2 id="doc-title"></h2>
-        <p id="doc-path"></p>
+    <div class="top">
+      <div class="doc-meta">
+        <div class="doc-title" id="doc-title"></div>
+        <div class="doc-path" id="doc-path"></div>
       </div>
       <div class="controls">
-        <!-- viewport presets -->
-        <div class="seg" aria-label="Viewport">
-          <button id="btn-mobile"  type="button">Mobile</button>
-          <button id="btn-tablet"  type="button">Tablet</button>
-          <button id="btn-desktop" type="button" class="active">Desktop</button>
-          <button id="btn-full"    type="button">Full</button>
+        <div class="seg">
+          <button id="desktop" class="active" type="button">Desktop</button>
+          <button id="mobile" type="button">Mobile</button>
+          <button id="fit" type="button">Fit</button>
         </div>
-        <!-- width slider -->
-        <div class="width-ctrl">
-          <input type="range" id="width-slider" min="320" max="1440" value="960" step="10">
-          <span class="w-label" id="w-label">960px</span>
-        </div>
-        <!-- source panel toggle -->
-        <button class="icon-btn on" id="source-toggle" title="소스 패널 접기/펼치기">⌗ STN</button>
+        <label class="range"><input id="width" type="range" min="360" max="1280" step="20" value="960"><span id="width-label">960px</span></label>
       </div>
     </div>
-    <div class="workspace-viewer" id="workspace">
-      <section id="preview" class="preview">
-        <div class="frame" id="frame" style="max-width:960px"></div>
-      </section>
-      <section class="source-panel" id="source-panel">
-        <pre id="source"></pre>
-      </section>
+    <div class="work">
+      <section class="canvas" id="canvas"><div class="stage" id="stage"><div class="frame" id="frame"></div></div></section>
+      <aside class="source"><div class="source-label">STN Source</div><pre id="source"></pre></aside>
     </div>
   </main>
 </div>
+
+<script id="wf-docs-tpl" type="application/json">[]</script>
+<script id="wf-data" type="application/json">[]</script>
 <script>
-const docs = __DOCS_JSON__;
-
-const app       = document.getElementById('app');
-const sidebar   = document.getElementById('sidebar');
-const workspace = document.getElementById('workspace');
-const sourcePanel = document.getElementById('source-panel');
-const frame     = document.getElementById('frame');
-const source    = document.getElementById('source');
-const title     = document.getElementById('doc-title');
-const pathEl    = document.getElementById('doc-path');
-const slider    = document.getElementById('width-slider');
-const wLabel    = document.getElementById('w-label');
-
-// ── Nav panel toggle ────────────────────────────────────────────────
-let navOpen = true;
-document.getElementById('nav-toggle').onclick = function() {
-  navOpen = !navOpen;
-  app.style.setProperty('--nav-w', navOpen ? '260px' : '0px');
-  sidebar.style.padding = navOpen ? '' : '0';
-  this.classList.toggle('on', navOpen);
-};
-
-// ── Source panel toggle ─────────────────────────────────────────────
-let sourceOpen = true;
-document.getElementById('source-toggle').onclick = function() {
-  sourceOpen = !sourceOpen;
-  sourcePanel.classList.toggle('hidden', !sourceOpen);
-  workspace.classList.toggle('source-off', !sourceOpen);
-  this.classList.toggle('on', sourceOpen);
-};
-
-// ── Frame width ─────────────────────────────────────────────────────
-const PRESETS = { mobile: 390, tablet: 768, desktop: 960, full: 1440 };
-
-function setWidth(px, activeId) {
-  frame.style.maxWidth = px + 'px';
-  slider.value = px;
-  wLabel.textContent = px + 'px';
-  ['btn-mobile','btn-tablet','btn-desktop','btn-full'].forEach(id => {
-    document.getElementById(id).classList.toggle('active', id === activeId);
+const docs=JSON.parse(document.getElementById('wf-docs-tpl').textContent);
+const nav=document.getElementById('nav');
+const canvas=document.getElementById('canvas');
+const stage=document.getElementById('stage');
+const frame=document.getElementById('frame');
+const source=document.getElementById('source');
+const title=document.getElementById('doc-title');
+const pathEl=document.getElementById('doc-path');
+const desktop=document.getElementById('desktop');
+const mobile=document.getElementById('mobile');
+const fit=document.getElementById('fit');
+const width=document.getElementById('width');
+const widthLabel=document.getElementById('width-label');
+let current=docs.findIndex(d=>d.kind==='screen');
+let zoom=1;
+let spaceDown=false;
+let panning=false;
+let panStartX=0,panStartY=0,scrollStartX=0,scrollStartY=0;
+if(current<0)current=0;
+function label(kind){return kind==='global'?'Global':kind==='screen'?'Screens':'Components'}
+function renderNav(){
+  nav.innerHTML='';
+  ['global','screen','component'].forEach(kind=>{
+    const items=docs.map((d,i)=>({d,i})).filter(x=>x.d.kind===kind);
+    if(!items.length)return;
+    const g=document.createElement('div');g.className='group';g.textContent=label(kind);nav.appendChild(g);
+    items.forEach(({d,i})=>{
+      const b=document.createElement('button');b.className='nav-btn';b.type='button';b.textContent=d.name;b.dataset.index=i;
+      b.addEventListener('click',()=>select(i));nav.appendChild(b);
+    });
   });
 }
-
-document.getElementById('btn-mobile') .onclick = () => setWidth(390,  'btn-mobile');
-document.getElementById('btn-tablet') .onclick = () => setWidth(768,  'btn-tablet');
-document.getElementById('btn-desktop').onclick = () => setWidth(960,  'btn-desktop');
-document.getElementById('btn-full')   .onclick = () => setWidth(1440, 'btn-full');
-
-slider.oninput = () => {
-  const w = parseInt(slider.value);
-  frame.style.maxWidth = w + 'px';
-  wLabel.textContent = w + 'px';
-  ['btn-mobile','btn-tablet','btn-desktop','btn-full'].forEach(id =>
-    document.getElementById(id).classList.remove('active')
-  );
-};
-
-// ── Navigation ───────────────────────────────────────────────────────
-const nav = document.getElementById('nav');
-
-function renderNav() {
-  nav.innerHTML = '';
-  const labels = { global: 'Global', screen: 'Screens', component: 'Components' };
-  for (const kind of ['global', 'screen', 'component']) {
-    const items = docs.map((d, i) => [d, i]).filter(([d]) => d.kind === kind);
-    if (!items.length) continue;
-    const hdr = document.createElement('div');
-    hdr.className = 'group-title';
-    hdr.textContent = labels[kind];
-    nav.appendChild(hdr);
-    for (const [d, i] of items) {
-      const btn = document.createElement('button');
-      btn.className = 'nav-button';
-      btn.type = 'button';
-      btn.textContent = d.name;
-      btn.onclick = () => select(i);
-      btn.dataset.index = i;
-      nav.appendChild(btn);
-    }
+function select(i){
+  const d=docs[i];
+  if(!d){
+    title.textContent='No design files found';pathEl.textContent='';source.textContent='';
+    frame.className='frame';frame.innerHTML='<div class="wf-screen"><div class="wf-workspace"><div class="wf-section"><div class="wf-section-label">Empty</div><div class="wf-text">No STN documents were provided.</div></div></div></div>';
+    requestAnimationFrame(centerFrame);
+    return;
   }
+  current=i;title.textContent=d.name;pathEl.textContent=d.path;source.textContent=d.source;
+  frame.className='frame '+(d.kind==='component'?'component':'');
+  frame.innerHTML=d.html;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.index)===i));
+  requestAnimationFrame(centerFrame);
 }
-
-function select(index) {
-  const doc = docs[index];
-  title.textContent = doc ? doc.name : '—';
-  pathEl.textContent = doc ? doc.path : '';
-  frame.innerHTML = doc ? doc.html : '<div class="wf-empty">디자인 파일이 없습니다.</div>';
-  source.textContent = doc ? doc.source : '';
-  for (const btn of nav.querySelectorAll('.nav-button'))
-    btn.classList.toggle('active', Number(btn.dataset.index) === index);
+function setMode(mode){
+  frame.classList.toggle('mobile',mode==='mobile');
+  desktop.classList.toggle('active',mode==='desktop');
+  mobile.classList.toggle('active',mode==='mobile');
 }
-
+function placeFrame(){
+  const scaledW=frame.offsetWidth*zoom;
+  const scaledH=frame.offsetHeight*zoom;
+  const left=Math.max(600,(stage.clientWidth-scaledW)/2);
+  const top=Math.max(420,(stage.clientHeight-scaledH)/2);
+  frame.style.left=left+'px';
+  frame.style.top=top+'px';
+  frame.style.transform='scale('+zoom+')';
+}
+function centerFrame(){
+  placeFrame();
+  const x=frame.offsetLeft+(frame.offsetWidth*zoom-canvas.clientWidth)/2;
+  const y=frame.offsetTop+(frame.offsetHeight*zoom-canvas.clientHeight)/2;
+  canvas.scrollLeft=Math.max(0,x);
+  canvas.scrollTop=Math.max(0,y);
+}
+function fitFrame(){
+  zoom=Math.max(.35,Math.min(1,(canvas.clientWidth-88)/frame.offsetWidth,(canvas.clientHeight-88)/frame.offsetHeight));
+  centerFrame();
+}
+function zoomAt(nextZoom,cx,cy){
+  const oldZoom=zoom;
+  const oldLeft=frame.offsetLeft;
+  const oldTop=frame.offsetTop;
+  const worldX=(canvas.scrollLeft+cx-oldLeft)/oldZoom;
+  const worldY=(canvas.scrollTop+cy-oldTop)/oldZoom;
+  zoom=Math.max(.25,Math.min(3,nextZoom));
+  placeFrame();
+  canvas.scrollLeft=frame.offsetLeft+worldX*zoom-cx;
+  canvas.scrollTop=frame.offsetTop+worldY*zoom-cy;
+}
+desktop.addEventListener('click',()=>{width.value=960;widthLabel.textContent='960px';frame.style.width='960px';zoom=1;setMode('desktop');centerFrame()});
+mobile.addEventListener('click',()=>{width.value=390;widthLabel.textContent='390px';frame.style.width='390px';zoom=1;setMode('mobile');centerFrame()});
+fit.addEventListener('click',fitFrame);
+width.addEventListener('input',()=>{frame.style.width=width.value+'px';widthLabel.textContent=width.value+'px';zoom=1;setMode(Number(width.value)<560?'mobile':'desktop');centerFrame()});
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){
+    e.preventDefault();
+    if(e.repeat)return;
+    spaceDown=true;
+    if(!panning)canvas.classList.add('space-pan');
+  }
+},{capture:true});
+window.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;canvas.classList.remove('space-pan')}});
+canvas.addEventListener('mousedown',e=>{
+  if((e.button===0&&spaceDown)||e.button===1){
+    e.preventDefault();
+    panning=true;panStartX=e.clientX;panStartY=e.clientY;scrollStartX=canvas.scrollLeft;scrollStartY=canvas.scrollTop;
+    canvas.classList.remove('space-pan');canvas.classList.add('panning');
+  }
+});
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(spaceDown)return;
+  const rect=canvas.getBoundingClientRect();
+  const factor=e.deltaY<0?1.1:.9;
+  zoomAt(zoom*factor,e.clientX-rect.left,e.clientY-rect.top);
+},{passive:false});
+window.addEventListener('mousemove',e=>{if(panning){canvas.scrollLeft=scrollStartX-(e.clientX-panStartX);canvas.scrollTop=scrollStartY-(e.clientY-panStartY)}});
+window.addEventListener('mouseup',()=>{if(panning){panning=false;canvas.classList.remove('panning');if(spaceDown)canvas.classList.add('space-pan')}});
+canvas.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault()});
+window.addEventListener('resize',placeFrame);
 renderNav();
-const firstScreen = docs.findIndex(d => d.kind === 'screen');
-select(firstScreen >= 0 ? firstScreen : 0);
+select(current);
 </script>
 </body>
 </html>
