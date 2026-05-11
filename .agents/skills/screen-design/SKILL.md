@@ -38,15 +38,15 @@ Clarify if unclear:
 
 Check if `./design/GLOBAL.md` exists.
 
-**If it exists:** Read it and use it as the shared layout wrapper. Inform the user which global layout is being applied.
+**If it exists:** Read it and decide whether the current screen should use the shared layout. Use `<GLOBAL />` for screens that belong inside the shared app shell. Skip it for screens that need an independent layout, such as onboarding, login, error, full-screen editors, or modal-like standalone flows. Inform the user whether the global layout is being applied or intentionally skipped.
 
-**If it does not exist:** Ask the user about their preferences for shared layout elements:
+**If it does not exist:** Create `GLOBAL.md` only when the screen requirements imply a reusable shared layout. If no shared layout is needed, proceed without `GLOBAL.md`. If a shared layout is needed, ask the user about their preferences for shared layout elements:
 - Header: brand logo, user menu, notifications, search?
 - Navigation: sidebar, top nav, bottom tab bar?
 - Footer: links, legal, support?
 - Responsive behavior: how should navigation change on mobile?
 
-Then generate `./design/GLOBAL.md` in STN format based on the user's answers and save it. Use `{content}` to mark where individual screen content is inserted.
+Then generate `./design/GLOBAL.md` in STN format based on the user's answers and save it. Use `{content}` to mark where individual screen content is inserted. Screens that use the shared layout reference it with `<GLOBAL />`; they do not duplicate the `GLOBAL.md` tree.
 
 ### Step 3: Check Reusable Components
 
@@ -65,8 +65,8 @@ Build the screen's element tree in STN format:
 
 1. Add YAML frontmatter at the top of the screen document. List every component used under `imports`, with paths relative to the screen file, e.g. `imports: ["./components/ProductCard.md"]`
 2. Start the tree with `- Screen: {ScreenName}`
-3. Embed the global layout structure, replacing `{content}` with the screen-specific elements
-4. Reference imported components by their component name in the tree
+3. If the screen uses the shared layout, add `<GLOBAL />` as the first child of `Screen` and place screen-specific elements under `Content`. If not, define the complete screen tree directly
+4. Reference imported components with the self-closing component reference syntax: `<ComponentName "instruction" />`
 5. Apply responsive annotations where desktop and mobile differ
 6. Validate against STN rules:
    - Single root
@@ -74,7 +74,10 @@ Build the screen's element tree in STN format:
    - Leaf nodes carry content
    - No duplicate siblings
    - Depth <= 5
-   - Responsive replacements are single elements
+   - `<GLOBAL />` is optional, not imported, and only appears as the first child of `Screen`
+   - Component references use exactly one quoted instruction string and no key-value props
+   - Component references point to components listed in frontmatter imports
+   - Responsive replacements are single elements or single component references
    - `?` prefix only on optional elements
    - Frontmatter import paths are relative to the screen file
    - Component names match their filenames

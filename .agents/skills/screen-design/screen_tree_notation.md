@@ -1,6 +1,6 @@
 # Screen Tree Notation (STN)
 
-A notation for representing screen and component element trees using Markdown lists.
+A notation for representing screen, global layout, and component element trees using Markdown lists.
 
 ## File Layout
 
@@ -15,13 +15,13 @@ design/
     FilterBar.md
 ```
 
-- `design/GLOBAL.md` defines the shared layout wrapper and uses `{content}` as the screen insertion point.
+- `design/GLOBAL.md` optionally defines the shared layout wrapper and uses `{content}` as the screen insertion point.
 - `design/{ScreenName}.md` defines one screen.
 - `design/components/{ItemName}.md` defines one reusable component.
 
 ## Frontmatter Imports
 
-Screen files declare reusable components in YAML frontmatter. Import paths must be relative to the screen file.
+Screen files declare reusable components in YAML frontmatter. Import paths must be relative to the screen file. `GLOBAL.md` is not imported through frontmatter; screens reference it with the reserved `<GLOBAL />` layout reference when needed.
 
 ```markdown
 ---
@@ -31,17 +31,48 @@ imports:
 ---
 ```
 
-Imported components are referenced in the screen tree by component name:
+Imported components are referenced in the screen tree with self-closing JSX-like syntax:
 
 ```markdown
 - Screen: Product List
   - Header
     - Title "Products"
   - Body
-    - FilterBar "{filters}"
+    - <FilterBar "{filters}" />
     - ProductGrid "{products}"
-      - ProductCard "{product}"
+      - <ProductCard "{product}" />
 ```
+
+## Global Layout Reference
+
+`GLOBAL.md` is an optional shared layout. A screen that uses it references it with `<GLOBAL />` instead of copying the global layout tree into the screen file.
+
+```markdown
+---
+imports:
+  - "./components/ProductCard.md"
+---
+
+- Screen: Product List
+  - <GLOBAL />
+  - Content
+    - PageHeader
+      - Title "Products"
+    - ProductGrid "{products}"
+      - <ProductCard "{product}" />
+```
+
+Use `<GLOBAL />` for screens that belong inside the shared app shell. Omit it for screens that need an independent layout, such as onboarding, login, error, full-screen editors, or modal-like standalone flows.
+
+Rules:
+- `<GLOBAL />` is optional
+- `<GLOBAL />` must be the first child of `Screen` when present
+- `<GLOBAL />` is not listed in frontmatter imports
+- `<GLOBAL />` takes no instruction string, props, or children
+- `<GLOBAL />` resolves to `./design/GLOBAL.md`
+- `GLOBAL.md` must include exactly one `{content}` slot
+- When `<GLOBAL />` is present, screen-specific nodes should be placed under `Content`
+- When `<GLOBAL />` is absent, the screen tree must define the full screen layout directly
 
 ## Basic Syntax
 
@@ -67,9 +98,11 @@ Imported components are referenced in the screen tree by component name:
 
 | Notation | Meaning | Example |
 |----------|---------|---------|
-| `PascalCase` | Component / element type | `Header`, `Button`, `TextInput` |
+| `PascalCase` | Element type | `Header`, `Button`, `TextInput` |
 | `- Screen: Name` | Screen root | `- Screen: Dashboard` |
 | `- Component: Name` | Component root | `- Component: ProductCard` |
+| `<GLOBAL />` | Optional shared layout reference | `<GLOBAL />` |
+| `<ComponentName "..." />` | Component reference | `<ProductCard "{product}" />` |
 | `imports` frontmatter | Component imports | `imports: ["./components/ProductCard.md"]` |
 | `"..."` | Visible text or placeholder | `"Submit"`, `"Write a comment..."` |
 | `{...}` | Dynamic data binding | `{author.name}`, `{post.body}` |
@@ -104,8 +137,12 @@ Do not extract a component only to rename structural nodes such as `Header`, `Bo
 - A component file contains exactly one root: `- Component: {ItemName}`
 - `{ItemName}` must be PascalCase and must match the filename: `ItemName.md`
 - Component imports appear in screen file frontmatter, not inside component files by default
-- Component props are represented through data bindings such as `{product}`, `{user}`, or `{order.items}`
+- Component references must use self-closing syntax: `<ComponentName "instruction" />`
+- The instruction must be exactly one quoted string
+- Use the instruction string to pass data context or rendering intent, such as `{product}`, `{user}`, or `Compact read-only summary for {order}`
+- Key-value props, children, multiple instruction strings, and omitted instructions are not allowed
 - A component may include responsive annotations using the same rules as screens
+- `<GLOBAL />` is a reserved layout reference, not a component reference
 
 ## Responsive Notation
 
@@ -122,7 +159,7 @@ Desktop is the default. Use `@mobile(...)` to override only the differences.
       - StatCard "{activeUsers}"
       - StatCard "{revenue}"
       - StatCard "{conversionRate}"
-    - DataTable "{projects}" @mobile(-> CardList)
+    - DataTable "{projects}" @mobile(-> <ProjectCardList "{projects}" />)
   - BottomNav @desktop(hidden)
     - NavItem "Home"
     - NavItem "Projects"
@@ -134,7 +171,7 @@ Desktop is the default. Use `@mobile(...)` to override only the differences.
 | Notation | Meaning | Example |
 |----------|---------|---------|
 | `@mobile(hidden)` | Hidden at this breakpoint | `Sidebar @mobile(hidden)` |
-| `@mobile(-> Alt)` | Replaced with another element | `DataTable @mobile(-> CardList)` |
+| `@mobile(-> Alt)` | Replaced with another element or component reference | `DataTable @mobile(-> <CardList "{items}" />)` |
 | `@mobile(change)` | Layout/property change | `StatsSection (row) @mobile(column)` |
 | `@desktop(hidden)` | Hidden on desktop (mobile-only) | `BottomNav @desktop(hidden)` |
 | No annotation | Same across all breakpoints | `StatCard "{revenue}"` |
@@ -148,20 +185,22 @@ A well-formed STN must satisfy:
 
 1. **Single root**: Every screen tree starts with exactly one `- Screen: {name}` node; every component tree starts with exactly one `- Component: {name}` node
 2. **Valid imports**: Screen frontmatter imports must use paths relative to the screen file, and imported component names must match their filenames
-3. **No empty containers**: Every node with children must have at least one meaningful child; avoid wrapper-only nodes
-4. **Leaf nodes carry content**: Leaf elements must have either `"text"`, `{binding}`, or a self-evident type (e.g. `Avatar`, `Divider`)
-5. **No duplicate siblings**: Sibling nodes at the same level must be distinguishable; two `Button "Save"` siblings are invalid unless differentiated with variant or context
-6. **Depth <= 5**: If nesting exceeds 5 levels, flatten the tree or extract a named component
-7. **Responsive consistency**: `@mobile(-> Alt)` replacement must be a single element, not a subtree. If the replacement needs children, extract it as a named component
-8. **Conditional prefix only on optional elements**: `?` must not appear on structural nodes like `Header` or `Body`
+3. **Valid global reference**: `<GLOBAL />` is optional. If present, it must be the first child of `Screen`, must not appear in frontmatter imports, must take no instruction string, props, or children, and must resolve to `./design/GLOBAL.md` with exactly one `{content}` slot
+4. **Valid component references**: Imported components must be referenced as `<ComponentName "instruction" />` with exactly one quoted instruction string, no key-value props, no children, and no omitted instruction. Every component reference must point to a component listed in frontmatter imports
+5. **No empty containers**: Every node with children must have at least one meaningful child; avoid wrapper-only nodes
+6. **Leaf nodes carry content**: Leaf elements must have either `"text"`, `{binding}`, or a self-evident type (e.g. `Avatar`, `Divider`)
+7. **No duplicate siblings**: Sibling nodes at the same level must be distinguishable; two `Button "Save"` siblings are invalid unless differentiated with variant or context
+8. **Depth <= 5**: If nesting exceeds 5 levels, flatten the tree or extract a named component
+9. **Responsive consistency**: `@mobile(-> Alt)` replacement must be a single element or a single component reference, not a subtree. If the replacement needs children, extract it as a named component
+10. **Conditional prefix only on optional elements**: `?` must not appear on structural nodes like `Header` or `Body`
 
 ## Examples: Good vs Bad
 
 ### Naming
 
 ```markdown
-# Good: uses domain component name
-- UserCard
+# Good: uses domain-specific element or component names
+- UserSummary
   - Avatar
   - Text "{user.name}"
 
@@ -176,7 +215,7 @@ A well-formed STN must satisfy:
 ```markdown
 # Good: flat where possible
 - Body
-  - PostCard
+  - PostSummary
     - Text "{post.title}"
     - Text "{post.summary}" (caption)
 
@@ -184,7 +223,7 @@ A well-formed STN must satisfy:
 - Body
   - Section
     - ContentArea
-      - PostCard
+      - PostSummary
         - TextGroup
           - Text "{post.title}"
           - Text "{post.summary}" (caption)
@@ -194,11 +233,56 @@ A well-formed STN must satisfy:
 
 ```markdown
 # Good: difference expressed inline
-- DataTable "{users}" @mobile(-> CardList)
+- DataTable "{users}" @mobile(-> <UserCardList "{users}" />)
 
 # Bad: duplicated tree for each breakpoint
 - @desktop DataTable "{users}"
 - @mobile CardList "{users}"
+```
+
+### Global Layout
+
+```markdown
+# Good: app-shell screen references GLOBAL and keeps local content separate
+---
+imports:
+  - "./components/ProductCard.md"
+---
+
+- Screen: Product List
+  - <GLOBAL />
+  - Content
+    - PageHeader
+      - Title "Products"
+    - ProductGrid "{products}"
+      - <ProductCard "{product}" />
+
+# Good: standalone screen omits GLOBAL and defines the full layout directly
+- Screen: Login
+  - Header
+    - Title "Sign in"
+  - Body
+    - TextInput "Email" (placeholder)
+    - TextInput "Password" (placeholder)
+    - Button "Continue" [primary]
+```
+
+```markdown
+# Bad: GLOBAL is not imported through frontmatter
+---
+imports:
+  - "./GLOBAL.md"
+---
+
+# Bad: GLOBAL must be the first child of Screen when present
+- Screen: Product List
+  - Content
+    - Title "Products"
+  - <GLOBAL />
+
+# Bad: GLOBAL takes no instruction string, props, or children
+- Screen: Product List
+  - <GLOBAL "{content}" />
 ```
 
 ### Components
@@ -213,13 +297,26 @@ imports:
 - Screen: Product List
   - Body
     - ProductGrid "{products}"
-      - ProductCard "{product}"
+      - <ProductCard "{product}" />
 
-# Bad: component exists but is not imported
+# Bad: component exists but is not imported and is not referenced with component syntax
 - Screen: Product List
   - Body
     - ProductGrid "{products}"
       - ProductCard "{product}"
+```
+
+```markdown
+# Bad: key-value props are not allowed
+- <ProductCard product="{product}" />
+
+# Bad: component references must include exactly one quoted instruction
+- <ProductCard />
+- <ProductCard "{product}" "compact" />
+
+# Bad: children are not allowed in component references
+- <ProductCard "{product}">
+  - Button "Add"
 ```
 
 ### Leaf Content
