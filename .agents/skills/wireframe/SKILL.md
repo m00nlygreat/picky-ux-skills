@@ -136,6 +136,8 @@ Write a complete self-contained HTML document to `./wireframe.html`.
 
 Do not visually inspect `viewer.html` and recreate it from memory. First copy `.agents/skills/wireframe/template/viewer.html` to `./wireframe.html`, then edit the copied file in place.
 
+On Windows, do not generate or replace long HTML/CSS/JSON payloads with inline PowerShell commands. PowerShell is unreliable for long strings, quotes, and escaping in this workflow. Use a Node.js script as the default path for reading the template, replacing slots, serializing JSON payloads, and writing `wireframe.html`.
+
 Mandatory shell-preservation rules:
 
 - Preserve the copied viewer chrome, canvas, source panel, controls, and JavaScript unless the user explicitly asks to change the viewer itself.
@@ -164,9 +166,24 @@ Do not create temporary classification files. Keep the render type decisions in 
 
 ### 5. Verify
 
-Open `wireframe.html` in the browser. If direct `file://` access is blocked, serve the workspace with a local static server and open the localhost URL.
+Run static verification first. Do not automatically open a browser after generation because `file://`, `localhost`, or `127.0.0.1` access can be blocked by app or browser policy. Browser-based visual verification is optional and should be left to the user's choice unless they explicitly request it.
 
-Verify:
+Static verification should check:
+
+- `wireframe.html` exists and is non-empty.
+- The copied viewer shell still contains the expected chrome, canvas, source panel, controls, and JavaScript anchors.
+- Template slots were replaced with valid content:
+  - `<meta name="wf-generated" content="...">`
+  - `<style id="wf-generated-style">...</style>`
+  - `<script id="wf-docs-tpl" type="application/json">...</script>`
+  - `<script id="wf-data" type="application/json">...</script>`
+- JSON payloads parse successfully.
+- The generated document payload includes at least one renderable document when screen/component sources exist.
+- Raw bindings such as `{row.primary}` are not the dominant preview content when realistic sample data can be inferred.
+
+If the user asks for browser verification, open `wireframe.html` in the browser. If direct `file://` access is blocked, serve the workspace with a local static server and open the localhost URL.
+
+Browser verification should check:
 
 - The page loads without console errors.
 - The first screen is visible.
