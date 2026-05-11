@@ -1,6 +1,6 @@
 ---
 name: wireframe
-description: Generate ./wireframe.html directly from STN Markdown files in ./design. Use when Codex needs to turn STN screen/component trees into a GUI-like wireframe prototype without using a generator script.
+description: Generate ./wireframe.html directly from STN Markdown files in ./design. Use when Codex needs to turn STN screen/component trees into a GUI-like wireframe prototype without using a generator script; use $stn as the canonical STN syntax reference while parsing.
 ---
 
 # Wireframe Skill
@@ -19,6 +19,20 @@ This skill is for rapid GUI prototyping from STN. The output must look like an a
 
 No generator script is used. The agent reads the design files, classifies the STN nodes, copies the canonical viewer shell, injects generated payloads, and writes `wireframe.html` itself.
 
+## STN Reference
+
+Use `$stn` as the canonical syntax reference before interpreting STN. `$wireframe` should be forgiving enough to render imperfect files when possible, but it must understand these STN conventions:
+
+- STN is a Markdown nested-list notation; indentation defines parent, child, and sibling relationships.
+- Screen roots start with `- Screen: {Name}` and component roots start with `- Component: {Name}`.
+- `./design/GLOBAL.md` is inserted by the reserved `<GLOBAL />` node, not through frontmatter imports.
+- `<ComponentName "instruction" />` references reusable components listed in YAML frontmatter `imports`.
+- `?Element` marks optional or conditional UI.
+- `@mobile(...)`, `@desktop(...)`, and similar annotations describe responsive differences.
+- Quoted strings, `{dataBinding}`, `[variant-or-icon]`, and `(state-or-layout)` are semantic hints for visual rendering.
+
+Do not treat STN as a raw outline. Preserve the source text in the viewer, but render the semantic UI structure.
+
 ## Files
 
 - `./design/GLOBAL.md`: optional shared layout STN.
@@ -28,7 +42,7 @@ No generator script is used. The agent reads the design files, classifies the ST
 - `./wireframe.html`: final self-contained HTML output written directly by the agent.
 - `./CURRENT.md`: current implementation notes and decisions.
 
-If `./design` does not exist, tell the user STN design files are missing and suggest creating them with `$screen-design`.
+If `./design` does not exist, tell the user STN design files are missing and suggest creating them with `$design`.
 
 ## Workflow
 
@@ -54,6 +68,14 @@ Track for each node:
 - siblings
 - children
 - source file path
+
+Also resolve STN-specific structure:
+
+- Parse YAML frontmatter imports for component references.
+- Detect `<GLOBAL />` and map it to `./design/GLOBAL.md`.
+- Keep component references as component nodes while rendering the referenced component payload where useful.
+- Preserve optional markers and responsive annotations as metadata; render the default desktop structure unless generating mobile-specific preview behavior.
+- Treat malformed but recognizable STN as renderable, and report uncertain classifications instead of failing silently.
 
 ### 3. Classify Nodes Into Render Types
 

@@ -1,6 +1,13 @@
+---
+name: stn
+description: Canonical reference for Screen Tree Notation (STN) syntax, validation, imports, components, GLOBAL layout, responsive annotations, and examples. Use when Codex needs to read, write, validate, refactor, render, or transform STN files in ./design, including work for $design and $wireframe.
+---
+
 # Screen Tree Notation (STN)
 
-A notation for representing screen, global layout, and component element trees using Markdown lists.
+STN is a notation for representing screen, global layout, and component element trees using Markdown lists.
+
+Use this skill as the canonical syntax reference. Other skills should make product or rendering decisions themselves, then use these rules to keep STN files valid and interoperable.
 
 ## File Layout
 
@@ -107,7 +114,7 @@ Rules:
 | `"..."` | Visible text or placeholder | `"Submit"`, `"Write a comment..."` |
 | `{...}` | Dynamic data binding | `{author.name}`, `{post.body}` |
 | `[...]` | Variant or icon | `[primary]`, `[bookmark]` |
-| `(...)` | Supplementary info (layout, state) | `(scrollable)`, `(sticky)`, `(caption)` |
+| `(...)` | Supplementary info, layout, or state | `(scrollable)`, `(sticky)`, `(caption)` |
 | `?` prefix | Conditional rendering | `?AuthBanner (if: !isLoggedIn)` |
 
 ## Components
@@ -173,11 +180,11 @@ Desktop is the default. Use `@mobile(...)` to override only the differences.
 | `@mobile(hidden)` | Hidden at this breakpoint | `Sidebar @mobile(hidden)` |
 | `@mobile(-> Alt)` | Replaced with another element or component reference | `DataTable @mobile(-> <CardList "{items}" />)` |
 | `@mobile(change)` | Layout/property change | `StatsSection (row) @mobile(column)` |
-| `@desktop(hidden)` | Hidden on desktop (mobile-only) | `BottomNav @desktop(hidden)` |
+| `@desktop(hidden)` | Hidden on desktop, mobile-only | `BottomNav @desktop(hidden)` |
 | No annotation | Same across all breakpoints | `StatCard "{revenue}"` |
 
 - Extensible with `@tablet(...)` and other breakpoints using the same pattern
-- Most cases are covered by just two modifiers: replace (`->`) and hide (`hidden`)
+- Most cases are covered by two modifiers: replace (`->`) and hide (`hidden`)
 
 ## Validation Rules
 
@@ -188,7 +195,7 @@ A well-formed STN must satisfy:
 3. **Valid global reference**: `<GLOBAL />` is optional. If present, it must be the first child of `Screen`, must not appear in frontmatter imports, must take no instruction string, props, or children, and must resolve to `./design/GLOBAL.md` with exactly one `{content}` slot
 4. **Valid component references**: Imported components must be referenced as `<ComponentName "instruction" />` with exactly one quoted instruction string, no key-value props, no children, and no omitted instruction. Every component reference must point to a component listed in frontmatter imports
 5. **No empty containers**: Every node with children must have at least one meaningful child; avoid wrapper-only nodes
-6. **Leaf nodes carry content**: Leaf elements must have either `"text"`, `{binding}`, or a self-evident type (e.g. `Avatar`, `Divider`)
+6. **Leaf nodes carry content**: Leaf elements must have either `"text"`, `{binding}`, or a self-evident type such as `Avatar` or `Divider`
 7. **No duplicate siblings**: Sibling nodes at the same level must be distinguishable; two `Button "Save"` siblings are invalid unless differentiated with variant or context
 8. **Depth <= 5**: If nesting exceeds 5 levels, flatten the tree or extract a named component
 9. **Responsive consistency**: `@mobile(-> Alt)` replacement must be a single element or a single component reference, not a subtree. If the replacement needs children, extract it as a named component

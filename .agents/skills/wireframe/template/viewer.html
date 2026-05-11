@@ -31,7 +31,8 @@ button{font:inherit}
 .range{display:flex;align-items:center;gap:6px;color:#68707c;font-size:11px}
 .range input{width:110px;accent-color:#2563eb}
 .work{flex:1;min-height:0;display:flex;gap:10px;padding:12px;overflow:hidden}
-.canvas{flex:1;min-width:0;overflow:auto;border:1px solid #d0d7e0;border-radius:8px;background:#c8d0db;cursor:default}
+.canvas{flex:1;min-width:0;overflow:auto;border:1px solid #d0d7e0;border-radius:8px;background:#c8d0db;cursor:default;scrollbar-width:none;-ms-overflow-style:none}
+.canvas::-webkit-scrollbar{width:0;height:0}
 .canvas.space-pan{cursor:grab}
 .canvas.panning{cursor:grabbing;user-select:none}
 .stage{position:relative;min-width:2200px;min-height:1800px}

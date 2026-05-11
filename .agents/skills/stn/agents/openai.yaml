@@ -1,0 +1,6 @@
+interface:
+  display_name: "STN"
+  short_description: "Canonical Screen Tree Notation syntax and validation reference."
+  default_prompt: "Use $stn as the canonical reference for reading, writing, validating, or transforming Screen Tree Notation files."
+policy:
+  allow_implicit_invocation: true

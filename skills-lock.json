@@ -7,11 +7,17 @@
       "skillPath": ".agents/skills/ia/SKILL.md",
       "computedHash": "e46bb665e41bedc220f2cf53cd5efd1177f26e2a8473bbb46cf006b01ee7d743"
     },
-    "screen-design": {
+    "stn": {
       "source": "m00nlygreat/picky-ux-skills",
       "sourceType": "github",
-      "skillPath": ".agents/skills/screen-design/SKILL.md",
-      "computedHash": "92d9de1fb17584e3cb5e9f7485be6473d2776bb9e22c8d791bf9020dc93874bf"
+      "skillPath": ".agents/skills/stn/SKILL.md",
+      "computedHash": "945c742920019bcbe4cd6cfe56087ad059599ff64e7876508cfa012218be6b25"
+    },
+    "design": {
+      "source": "m00nlygreat/picky-ux-skills",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/design/SKILL.md",
+      "computedHash": "b6b70d4684a57234cdebee939a52b9ff006dc8a297f9a966ffcc87f5165a8cb2"
     },
     "startup-advisor": {
       "source": "m00nlygreat/picky-ux-skills",
@@ -29,7 +35,7 @@
       "source": "m00nlygreat/picky-ux-skills",
       "sourceType": "github",
       "skillPath": ".agents/skills/wireframe/SKILL.md",
-      "computedHash": "d449091804a20135fd3dbca1decb076398bda2a1eb1ff54eaa853610bcfe0715"
+      "computedHash": "1ece01a6c75bdfc84415c6715c277e5b86dcb0e672e2aba68c4dd0961166bd7a"
     }
   }
 }
