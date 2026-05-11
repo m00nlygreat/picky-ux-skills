@@ -17,14 +17,14 @@ This skill is for rapid GUI prototyping from STN. The output must look like an a
 - Prefer semantic GUI containers (`shell`, `workspace`, `pane`, `toolbar`, `table`, `tabs`) over `generic`.
 - Use `generic` and `generic-leaf` only when no useful GUI role can be inferred.
 
-No generator script is used. The agent reads the design files, classifies the STN nodes, composes the HTML/CSS/JS, and writes `wireframe.html` itself.
+No generator script is used. The agent reads the design files, classifies the STN nodes, copies the canonical viewer shell, injects generated payloads, and writes `wireframe.html` itself.
 
 ## Files
 
 - `./design/GLOBAL.md`: optional shared layout STN.
 - `./design/*.md`: screen STN files.
 - `./design/components/*.md`: reusable component STN files.
-- `.agents/skills/wireframe/template/viewer.html`: reusable baseline viewer shell, CSS, and JavaScript. Read it before writing `wireframe.html`.
+- `.agents/skills/wireframe/template/viewer.html`: canonical viewer shell, CSS, and JavaScript. Copy it before modifying `wireframe.html`.
 - `./wireframe.html`: final self-contained HTML output written directly by the agent.
 - `./CURRENT.md`: current implementation notes and decisions.
 
@@ -74,17 +74,22 @@ Constraints:
 - Same node text may differ across files if context differs.
 - Component roots may use `component` when previewed as reusable UI, or `screen` when the component needs a full-frame preview.
 
-### 4. Compose `wireframe.html` Directly
+### 4. Copy Viewer Shell, Then Inject Payloads
 
 Write a complete self-contained HTML document to `./wireframe.html`.
 
-Start from `.agents/skills/wireframe/template/viewer.html` whenever possible:
+Do not visually inspect `viewer.html` and recreate it from memory. First copy `.agents/skills/wireframe/template/viewer.html` to `./wireframe.html`, then edit the copied file in place.
 
-- Reuse its viewer chrome, canvas, source panel, controls, JavaScript, and `.wf-*` component styles.
-- Replace `<meta name="wf-generated" content="">` with the current timestamp.
-- Replace `<script id="wf-docs-tpl" type="application/json">[]</script>` with the generated documents payload.
-- Replace `<script id="wf-data" type="application/json">[]</script>` with render type metadata when useful.
-- Keep style changes in `template/viewer.html` first, then copy the updated shell into `wireframe.html`.
+Mandatory shell-preservation rules:
+
+- Preserve the copied viewer chrome, canvas, source panel, controls, JavaScript, and `.wf-*` component styles unless the user explicitly asks to change the viewer itself.
+- Preserve zoom, fit, width slider, mouse wheel zoom, and space/middle-button pan behavior exactly as provided by `template/viewer.html`.
+- Replace only these template slots during normal generation:
+  - `<meta name="wf-generated" content="">` with the current timestamp.
+  - `<script id="wf-docs-tpl" type="application/json">[]</script>` with the generated documents payload.
+  - `<script id="wf-data" type="application/json">[]</script>` with render type metadata when useful.
+- If viewer shell changes are required, edit `template/viewer.html` first, then copy the updated shell to `wireframe.html` and inject the payloads.
+- Do not hand-rewrite the whole HTML document, simplify the viewer JavaScript, or omit controls that exist in the template.
 
 The document must include:
 
@@ -107,6 +112,7 @@ Verify:
 - The page loads without console errors.
 - The first screen is visible.
 - At least one screen/component navigation click works.
+- Desktop, Mobile, Fit, width slider, wheel zoom, and space/middle-button pan controls still work.
 - GUI structures such as app shell, panes, toolbars, tables, cards, or tabs render as visual interface elements.
 
 ### 6. Report
@@ -125,8 +131,9 @@ When `wireframe.html` already exists:
 1. Inspect `<meta name="wf-generated">` and the existing `wf-data` payload if present.
 2. Use `git diff --name-only HEAD@{"<wf-generated timestamp>"} -- design/` when available to identify changed design files.
 3. If no design files changed and the viewer structure does not need changes, report `wireframe is up to date`.
-4. Otherwise, read the changed files and update `wireframe.html` directly.
+4. Otherwise, read the changed files, regenerate the documents payload, copy `template/viewer.html` to `wireframe.html`, and inject the updated payload slots.
 5. Preserve previous render type decisions from `wf-data` when they still match the STN context.
+6. Do not patch the existing `wireframe.html` shell as the primary update path; recopy the template so viewer controls stay in sync.
 
 ## Render Type Vocabulary
 
