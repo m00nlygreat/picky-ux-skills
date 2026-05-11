@@ -1,0 +1,6 @@
+interface:
+  display_name: "Survey Advisor"
+  short_description: "Evaluate and improve PM user research surveys and questions."
+  default_prompt: "Use $survey-advisor to review these user research survey questions."
+policy:
+  allow_implicit_invocation: true

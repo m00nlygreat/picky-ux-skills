@@ -1,0 +1,6 @@
+interface:
+  display_name: "Screen Design"
+  short_description: "Create STN element trees for screens and shared layouts."
+  default_prompt: "Use $screen-design to design this screen as a Screen Tree Notation element tree."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(Start-Process *)",
+      "PowerShell(Start-Process \"D:\\\\agents\\\\uxskill\\\\wireframe.html\")",
+      "PowerShell(Remove-Item *)"
+    ]
+  }
+}

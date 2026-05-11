@@ -1,0 +1,6 @@
+interface:
+  display_name: "Startup Advisor"
+  short_description: "Review startup ideas, market fit, feasibility, and lean canvas."
+  default_prompt: "Use $startup-advisor to evaluate this startup idea and suggest improvements."
+policy:
+  allow_implicit_invocation: true

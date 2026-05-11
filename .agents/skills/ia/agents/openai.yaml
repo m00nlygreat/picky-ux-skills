@@ -1,0 +1,6 @@
+interface:
+  display_name: "Information Architecture"
+  short_description: "Generate product IA and screen hierarchy from plans or PRDs."
+  default_prompt: "Use $ia to generate a SCREENS.md information architecture from this product plan."
+policy:
+  allow_implicit_invocation: true
