@@ -10,6 +10,8 @@ from pathlib import Path
 
 GLOBAL_REF_RE = re.compile(r"<GLOBAL\s*/>")
 SCREEN_ROOT_RE = re.compile(r"^\s*-\s*Screen:\s*(.+?)\s*$", re.MULTILINE)
+FRONTMATTER_RE = re.compile(r"(?:\A|(?<=\n))---\s*\r?\n(.*?)\r?\n---\s*(?:\r?\n|\Z)", re.DOTALL)
+DEFAULT_STN_VERSION = "0.1.0"
 
 
 @dataclass
@@ -97,8 +99,27 @@ def parse_inline_imports(value: str) -> list[str]:
 
 
 def extract_frontmatter(content: str) -> str:
-    match = re.match(r"\A---\s*\r?\n(.*?)\r?\n---\s*(?:\r?\n|\Z)", content, re.DOTALL)
+    match = FRONTMATTER_RE.search(content)
     return match.group(1) if match else ""
+
+
+def parse_frontmatter_value(content: str, key: str) -> str | None:
+    frontmatter = extract_frontmatter(content)
+    if not frontmatter:
+        return None
+    for line in frontmatter.splitlines():
+        match = re.match(rf"^{re.escape(key)}\s*:\s*(.+)$", line.strip())
+        if match:
+            return strip_quotes(match.group(1))
+    return None
+
+
+def read_skill_version(project_root: Path) -> str:
+    skill_path = project_root / ".agents" / "skills" / "stn" / "SKILL.md"
+    if not skill_path.exists():
+        return DEFAULT_STN_VERSION
+    version = parse_frontmatter_value(read_text(skill_path), "version")
+    return version or DEFAULT_STN_VERSION
 
 
 def parse_imports(content: str) -> list[str]:
@@ -236,8 +257,19 @@ def render_diagnostics(diagnostics: list[str]) -> str:
     return "\n".join(f"- {item}" for item in diagnostics) + "\n"
 
 
-def render_screen_bundle(bundle: ScreenBundle, project_root: Path) -> str:
-    parts = [f"# Compiled Screen: {bundle.name}", ""]
+def compiled_frontmatter(stn_version: str) -> list[str]:
+    return [
+        "---",
+        f'stnVersion: "{stn_version}"',
+        f'generatedAt: "{datetime.now().astimezone().isoformat(timespec="seconds")}"',
+        "---",
+        "",
+    ]
+
+
+def render_screen_bundle(bundle: ScreenBundle, project_root: Path, stn_version: str) -> str:
+    parts = compiled_frontmatter(stn_version)
+    parts.extend([f"# Compiled Screen: {bundle.name}", ""])
     append_source_section(parts, "## Main", bundle.source, bundle.content, project_root)
 
     parts.extend(["## References", ""])
@@ -257,8 +289,9 @@ def render_screen_bundle(bundle: ScreenBundle, project_root: Path) -> str:
     return "\n".join(parts)
 
 
-def render_app_bundle(bundles: list[ScreenBundle], project_root: Path) -> str:
-    parts = ["# Compiled STN App", "", "## Screens", ""]
+def render_app_bundle(bundles: list[ScreenBundle], project_root: Path, stn_version: str) -> str:
+    parts = compiled_frontmatter(stn_version)
+    parts.extend(["# Compiled STN App", "", "## Screens", ""])
     diagnostics = []
 
     for bundle in bundles:
@@ -308,9 +341,11 @@ def write_manifest(
     out_dir: Path,
     app_compiled: Path | None,
     diagnostics: list[str],
+    stn_version: str,
 ) -> Path:
     manifest = {
         "generatedAt": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "stnVersion": stn_version,
         "screens": [manifest_entry(bundle, project_root) for bundle in bundles],
         "app": {
             "compiled": rel_path(app_compiled, project_root),
@@ -343,6 +378,7 @@ def main() -> None:
     project_root = Path(args.project_root).resolve()
     design_dir = (project_root / args.design_dir).resolve()
     out_dir = (project_root / args.out_dir).resolve()
+    stn_version = read_skill_version(project_root)
 
     if args.all or (not args.screen and not args.app):
         screen_paths = discover_screens(design_dir)
@@ -362,16 +398,16 @@ def main() -> None:
     should_write_screens = args.all or bool(args.screen) or args.app or (not args.screen and not args.app)
     if should_write_screens:
         for bundle in bundles:
-            write_text(bundle.compiled, render_screen_bundle(bundle, project_root))
+            write_text(bundle.compiled, render_screen_bundle(bundle, project_root, stn_version))
             wrote.append(bundle.compiled)
 
     app_compiled = None
     if generate_app:
         app_compiled = out_dir / "app.md"
-        write_text(app_compiled, render_app_bundle(bundles, project_root))
+        write_text(app_compiled, render_app_bundle(bundles, project_root, stn_version))
         wrote.append(app_compiled)
 
-    manifest_path = write_manifest(bundles, project_root, out_dir, app_compiled, diagnostics)
+    manifest_path = write_manifest(bundles, project_root, out_dir, app_compiled, diagnostics, stn_version)
     wrote.append(manifest_path)
 
     for path in wrote:

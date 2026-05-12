@@ -1,3 +1,5 @@
 /design/
+.stn/
+__pycache__/
 wireframe.html
 wireframe.docs.json

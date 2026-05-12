@@ -71,7 +71,7 @@ Save each new component as `./design/components/{ItemName}.md`. Each component f
 
 Build the screen's element tree in STN format:
 
-1. Add YAML frontmatter at the top of the screen document. List every component used under `imports`, with paths relative to the screen file, e.g. `imports: ["./components/ProductCard.md"]`
+1. Add YAML frontmatter at the top of the screen document. Include `stnVersion` from the current `$stn` skill frontmatter. List every component used under `imports`, with paths relative to the screen file, e.g. `imports: ["./components/ProductCard.md"]`
 2. Start the tree with `- Screen: {ScreenName}`
 3. If the screen uses the shared layout, add `<GLOBAL />` as the first child of `Screen` and place screen-specific elements under `Content`. If not, define the complete screen tree directly
 4. Reference imported components with the self-closing component reference syntax: `<ComponentName "instruction" />`
@@ -89,18 +89,29 @@ After presenting the result, ask:
 If the user agrees, save to `./design/{screen_name}.md` with this format:
 
 ```markdown
-# {Screen Name} Screen Design
-
-> Generated: {date}
-
 ---
+stnVersion: "{current_stn_skill_version}"
 imports:
   - "./components/{ComponentName}.md"
 ---
 
+# {Screen Name} Screen Design
+
+> Generated: {date}
+
 ## Element Tree
 
 {STN output}
+```
+
+When saving `./design/GLOBAL.md` or `./design/components/{ItemName}.md`, include the same `stnVersion` frontmatter. Component files without imports should still include:
+
+```markdown
+---
+stnVersion: "{current_stn_skill_version}"
+---
+
+- Component: {ItemName}
 ```
 
 ### Step 7: Suggest Wireframe Preview

@@ -11,13 +11,13 @@
       "source": "m00nlygreat/picky-ux-skills",
       "sourceType": "github",
       "skillPath": ".agents/skills/stn/SKILL.md",
-      "computedHash": "945c742920019bcbe4cd6cfe56087ad059599ff64e7876508cfa012218be6b25"
+      "computedHash": "54d4b33cb25dbebe9232afee693333386d78992a53deb65557980db874cba3ff"
     },
     "design": {
       "source": "m00nlygreat/picky-ux-skills",
       "sourceType": "github",
       "skillPath": ".agents/skills/design/SKILL.md",
-      "computedHash": "b6b70d4684a57234cdebee939a52b9ff006dc8a297f9a966ffcc87f5165a8cb2"
+      "computedHash": "5c3930b3b3211ed7482f871f24464620d6008785b72bdf3d6c755992a2cb58d9"
     },
     "startup-advisor": {
       "source": "m00nlygreat/picky-ux-skills",

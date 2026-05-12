@@ -1,5 +1,6 @@
 ---
 name: stn
+version: 0.1.0
 description: Canonical reference for Screen Tree Notation (STN) syntax, validation, imports, components, GLOBAL layout, responsive annotations, and examples. Use when Codex needs to read, write, validate, refactor, render, or transform STN files in ./design, including work for $design and $wireframe.
 ---
 
@@ -8,6 +9,28 @@ description: Canonical reference for Screen Tree Notation (STN) syntax, validati
 STN is a notation for representing screen, global layout, and component element trees using Markdown lists.
 
 Use this skill as the canonical syntax reference. Other skills should make product or rendering decisions themselves, then use these rules to keep STN files valid and interoperable.
+
+## Versioning
+
+The STN skill frontmatter must include a `version` field. Update it whenever the STN syntax, validation contract, generation rules, or compiler output shape changes.
+
+Every STN source artifact generated with this skill must record the skill version in YAML frontmatter:
+
+```markdown
+---
+stnVersion: "0.1.0"
+imports:
+  - "./components/ProductCard.md"
+---
+```
+
+Rules:
+- Use `stnVersion` for source STN documents under `design/`, including screens, `GLOBAL.md`, and component files
+- Keep `stnVersion` equal to the `version` field in this skill's frontmatter at generation time
+- If a STN document already has frontmatter, add or update `stnVersion` without changing the STN tree
+- If a component has no imports, its frontmatter may contain only `stnVersion`
+- Compiled STN bundles and `manifest.json` must also include `stnVersion`
+- Preserve older `stnVersion` values when reading existing artifacts; they document which STN skill version generated the artifact
 
 ## File Layout
 
@@ -32,6 +55,7 @@ Screen files declare reusable components in YAML frontmatter. Import paths must 
 
 ```markdown
 ---
+stnVersion: "0.1.0"
 imports:
   - "./components/ProductCard.md"
   - "./components/FilterBar.md"
@@ -56,6 +80,7 @@ Imported components are referenced in the screen tree with self-closing JSX-like
 
 ```markdown
 ---
+stnVersion: "0.1.0"
 imports:
   - "./components/ProductCard.md"
 ---
@@ -124,6 +149,10 @@ Components are reusable STN subtrees stored as separate files under `design/comp
 ```markdown
 # design/components/ProductCard.md
 
+---
+stnVersion: "0.1.0"
+---
+
 - Component: ProductCard
   - Image "{product.image}"
   - Text "{product.name}"
@@ -141,7 +170,7 @@ Do not extract a component only to rename structural nodes such as `Header`, `Bo
 
 ### Component Rules
 
-- A component file contains exactly one root: `- Component: {ItemName}`
+- A component file contains exactly one STN tree root after optional YAML frontmatter: `- Component: {ItemName}`
 - `{ItemName}` must be PascalCase and must match the filename: `ItemName.md`
 - Component imports appear in screen file frontmatter, not inside component files by default
 - Component references must use self-closing syntax: `<ComponentName "instruction" />`
@@ -230,6 +259,11 @@ For `design/{ScreenName}.md`, create `.stn/compiled/screens/{ScreenName}.md`.
 The generated document should use this shape:
 
 ```markdown
+---
+stnVersion: "0.1.0"
+generatedAt: "2026-05-13T00:00:00+09:00"
+---
+
 # Compiled Screen: ProductList
 
 ## Main
@@ -276,6 +310,11 @@ For app-level compilation, create `.stn/compiled/app.md`.
 The generated document should use this shape:
 
 ```markdown
+---
+stnVersion: "0.1.0"
+generatedAt: "2026-05-13T00:00:00+09:00"
+---
+
 # Compiled STN App
 
 ## Screens
@@ -329,6 +368,7 @@ Generate `manifest.json` with enough information for agents to open only the com
 ```json
 {
   "generatedAt": "2026-05-13T00:00:00+09:00",
+  "stnVersion": "0.1.0",
   "screens": [
     {
       "name": "ProductList",
@@ -355,7 +395,7 @@ Manifest paths should be workspace-relative and use `/` separators.
 
 A well-formed STN must satisfy:
 
-1. **Single root**: Every screen tree starts with exactly one `- Screen: {name}` node; every component tree starts with exactly one `- Component: {name}` node
+1. **Single root**: After optional YAML frontmatter and prose headings, every screen tree starts with exactly one `- Screen: {name}` node; every component tree starts with exactly one `- Component: {name}` node
 2. **Valid imports**: Screen frontmatter imports must use paths relative to the screen file, and imported component names must match their filenames
 3. **Valid global reference**: `<GLOBAL />` is optional. If present, it must be the first child of `Screen`, must not appear in frontmatter imports, must take no instruction string, props, or children, and must resolve to `./design/GLOBAL.md` with exactly one `{content}` slot
 4. **Valid component references**: Imported components must be referenced as `<ComponentName "instruction" />` with exactly one quoted instruction string, no key-value props, no children, and no omitted instruction. Every component reference must point to a component listed in frontmatter imports
