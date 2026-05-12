@@ -1,0 +1,4 @@
+interface:
+  display_name: "Interact"
+  short_description: "Ask users through a local GUI and wait for answers"
+  default_prompt: "Use $interact to ask me through a local GUI before making this decision."

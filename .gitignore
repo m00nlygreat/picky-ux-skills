@@ -3,3 +3,5 @@
 __pycache__/
 wireframe.html
 wireframe.docs.json
+.gui-answer.json
+.interact/
