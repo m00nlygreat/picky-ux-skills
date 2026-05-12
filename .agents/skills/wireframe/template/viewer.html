@@ -28,16 +28,30 @@ button{font:inherit}
 .seg{display:flex;border:1px solid #d0d7e0;border-radius:7px;overflow:hidden}
 .seg button{border:0;background:#fff;padding:5px 10px;cursor:pointer}
 .seg button.active{background:#1b1f24;color:#fff}
-.range{display:flex;align-items:center;gap:6px;color:#68707c;font-size:11px}
-.range input{width:150px;accent-color:#2563eb}
+.size-readout{min-width:88px;color:#68707c;font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
 .work{flex:1;min-height:0;display:flex;gap:10px;padding:12px;overflow:hidden}
 .canvas{flex:1;min-width:0;overflow:auto;border:1px solid #d0d7e0;border-radius:8px;background:#c8d0db;cursor:default;scrollbar-width:none;-ms-overflow-style:none}
 .canvas::-webkit-scrollbar{width:0;height:0}
 .canvas.space-pan{cursor:grab}
 .canvas.panning{cursor:grabbing;user-select:none}
+.canvas.resizing{user-select:none}
 .stage{position:relative;min-width:2200px;min-height:1800px}
-.frame{position:absolute;width:960px;min-height:680px;background:#fff;border:1px solid #c0cad8;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.15);overflow:hidden;transform-origin:top left}
+.frame{position:absolute;width:1600px;min-height:680px;background:#fff;border:1px solid #c0cad8;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.15);overflow:hidden;transform-origin:top left}
 .frame.component{padding:18px}
+.resize-handle{position:absolute;z-index:50;background:transparent;touch-action:none}
+.resize-handle.e,.resize-handle.w{top:0;bottom:0;width:12px;cursor:ew-resize}
+.resize-handle.e{right:0}
+.resize-handle.w{left:0}
+.resize-handle.n,.resize-handle.s{left:0;right:0;height:12px;cursor:ns-resize}
+.resize-handle.n{top:0}
+.resize-handle.s{bottom:0}
+.resize-handle.nw,.resize-handle.ne,.resize-handle.se,.resize-handle.sw{width:18px;height:18px}
+.resize-handle.nw{top:0;left:0;cursor:nwse-resize}
+.resize-handle.ne{top:0;right:0;cursor:nesw-resize}
+.resize-handle.se{right:0;cursor:nwse-resize}
+.resize-handle.sw{left:0;cursor:nesw-resize}
+.resize-handle.se,.resize-handle.sw{bottom:0}
+.resize-handle:hover,.resize-handle.active{background:rgba(37,99,235,.10)}
 .source{width:310px;flex:0 0 auto;background:#fff;border:1px solid #d0d7e0;border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
 .source-label{padding:9px 12px;border-bottom:1px solid #d0d7e0;color:#68707c;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .source pre{margin:0;padding:12px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;line-height:1.55}
@@ -114,7 +128,7 @@ button{font:inherit}
           <button id="mobile" type="button">Mobile</button>
           <button id="fit" type="button">Fit</button>
         </div>
-        <label class="range"><input id="width" type="range" min="360" max="2560" step="20" value="960"><span id="width-label">960px</span></label>
+        <span class="size-readout" id="size-label">1600 x 680px</span>
       </div>
     </div>
     <div class="work">
@@ -138,16 +152,45 @@ const pathEl=document.getElementById('doc-path');
 const desktop=document.getElementById('desktop');
 const mobile=document.getElementById('mobile');
 const fit=document.getElementById('fit');
-const width=document.getElementById('width');
-const widthLabel=document.getElementById('width-label');
+const sizeLabel=document.getElementById('size-label');
+const DEFAULT_DESKTOP_WIDTH=1600;
+const DEFAULT_MOBILE_WIDTH=390;
+const DEFAULT_FRAME_HEIGHT=680;
+const MIN_FRAME_WIDTH=360;
+const MAX_FRAME_WIDTH=2560;
+const MIN_FRAME_HEIGHT=480;
+const MAX_FRAME_HEIGHT=2200;
 let current=docs.findIndex(d=>d.kind==='screen');
 let currentMode='desktop';
 let zoom=1;
 let spaceDown=false;
 let panning=false;
+let resizing=null;
 let panStartX=0,panStartY=0,scrollStartX=0,scrollStartY=0;
 if(current<0)current=0;
 function label(kind){return kind==='global'?'Global':kind==='screen'?'Screens':'Components'}
+function clamp(value,min,max){return Math.max(min,Math.min(max,value))}
+function updateSizeLabel(){
+  sizeLabel.textContent=Math.round(frame.offsetWidth)+' x '+Math.round(frame.offsetHeight)+'px';
+}
+function setFrameSize(nextWidth,nextHeight){
+  const width=clamp(Math.round(nextWidth),MIN_FRAME_WIDTH,MAX_FRAME_WIDTH);
+  const height=clamp(Math.round(nextHeight),MIN_FRAME_HEIGHT,MAX_FRAME_HEIGHT);
+  frame.style.width=width+'px';
+  frame.style.minHeight=height+'px';
+  setMode(width<560?'mobile':'desktop');
+  updateSizeLabel();
+  return {width:frame.offsetWidth,height:frame.offsetHeight};
+}
+function addResizeHandles(){
+  ['n','w','e','s','nw','ne','sw','se'].forEach(edge=>{
+    const handle=document.createElement('div');
+    handle.className='resize-handle '+edge;
+    handle.dataset.edge=edge;
+    handle.setAttribute('aria-hidden','true');
+    frame.appendChild(handle);
+  });
+}
 function renderNav(){
   nav.innerHTML='';
   ['global','screen','component'].forEach(kind=>{
@@ -165,6 +208,8 @@ function select(i){
   if(!d){
     title.textContent='No design files found';pathEl.textContent='';source.textContent='';
     frame.className='frame';frame.innerHTML='<div class="wf-screen"><div class="wf-workspace"><div class="wf-section"><div class="wf-section-label">Empty</div><div class="wf-text">No STN documents were provided.</div></div></div></div>';
+    addResizeHandles();
+    updateSizeLabel();
     requestAnimationFrame(centerFrame);
     return;
   }
@@ -172,6 +217,8 @@ function select(i){
   frame.className=['frame',d.kind==='component'?'component':'',d.frameClass||'',currentMode==='mobile'?'mobile':''].filter(Boolean).join(' ');
   frame.dataset.docKind=d.kind||'';
   frame.innerHTML=d.html;
+  addResizeHandles();
+  updateSizeLabel();
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.index)===i));
   requestAnimationFrame(centerFrame);
 }
@@ -212,10 +259,50 @@ function zoomAt(nextZoom,cx,cy){
   canvas.scrollLeft=frame.offsetLeft+worldX*zoom-cx;
   canvas.scrollTop=frame.offsetTop+worldY*zoom-cy;
 }
-desktop.addEventListener('click',()=>{width.value=960;widthLabel.textContent='960px';frame.style.width='960px';zoom=1;setMode('desktop');centerFrame()});
-mobile.addEventListener('click',()=>{width.value=390;widthLabel.textContent='390px';frame.style.width='390px';zoom=1;setMode('mobile');centerFrame()});
+desktop.addEventListener('click',()=>{zoom=1;setFrameSize(DEFAULT_DESKTOP_WIDTH,DEFAULT_FRAME_HEIGHT);centerFrame()});
+mobile.addEventListener('click',()=>{zoom=1;setFrameSize(DEFAULT_MOBILE_WIDTH,DEFAULT_FRAME_HEIGHT);centerFrame()});
 fit.addEventListener('click',fitFrame);
-width.addEventListener('input',()=>{frame.style.width=width.value+'px';widthLabel.textContent=width.value+'px';zoom=1;setMode(Number(width.value)<560?'mobile':'desktop');centerFrame()});
+frame.addEventListener('pointerdown',e=>{
+  const handle=e.target.closest('.resize-handle');
+  if(!handle)return;
+  e.preventDefault();
+  e.stopPropagation();
+  const edge=handle.dataset.edge;
+  resizing={
+    edge,
+    handle,
+    startX:e.clientX,
+    startY:e.clientY,
+    startWidth:frame.offsetWidth,
+    startHeight:frame.offsetHeight,
+    startLeft:frame.offsetLeft,
+    startTop:frame.offsetTop
+  };
+  handle.classList.add('active');
+  canvas.classList.add('resizing');
+  frame.setPointerCapture?.(e.pointerId);
+});
+window.addEventListener('pointermove',e=>{
+  if(!resizing)return;
+  e.preventDefault();
+  const dx=(e.clientX-resizing.startX)/zoom;
+  const dy=(e.clientY-resizing.startY)/zoom;
+  let nextWidth=resizing.startWidth;
+  let nextHeight=resizing.startHeight;
+  if(resizing.edge.includes('e'))nextWidth=resizing.startWidth+dx;
+  if(resizing.edge.includes('w'))nextWidth=resizing.startWidth-dx;
+  if(resizing.edge.includes('s'))nextHeight=resizing.startHeight+dy;
+  if(resizing.edge.includes('n'))nextHeight=resizing.startHeight-dy;
+  const size=setFrameSize(nextWidth,nextHeight);
+  if(resizing.edge.includes('w'))frame.style.left=(resizing.startLeft+(resizing.startWidth-size.width))+'px';
+  if(resizing.edge.includes('n'))frame.style.top=(resizing.startTop+(resizing.startHeight-size.height))+'px';
+});
+window.addEventListener('pointerup',()=>{
+  if(!resizing)return;
+  resizing.handle.classList.remove('active');
+  canvas.classList.remove('resizing');
+  resizing=null;
+});
 window.addEventListener('keydown',e=>{
   if(e.code==='Space'&&!['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){
     e.preventDefault();
@@ -226,6 +313,7 @@ window.addEventListener('keydown',e=>{
 },{capture:true});
 window.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;canvas.classList.remove('space-pan')}});
 canvas.addEventListener('mousedown',e=>{
+  if(e.target.closest('.resize-handle'))return;
   if((e.button===0&&spaceDown)||e.button===1){
     e.preventDefault();
     panning=true;panStartX=e.clientX;panStartY=e.clientY;scrollStartX=canvas.scrollLeft;scrollStartY=canvas.scrollTop;
