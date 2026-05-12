@@ -130,11 +130,11 @@ Required interpretation work:
 
 Avoid brittle exact-name rendering. Names can inform the decision, but parent context, children, siblings, variants, and bindings must carry at least as much weight as the raw node text.
 
-### 4. Copy Viewer Shell, Then Inject CSS And Payloads
+### 4. Create Or Update Viewer Shell, Then Inject CSS And Payloads
 
 Write a complete self-contained HTML document to `./wireframe.html`.
 
-Do not visually inspect `viewer.html` and recreate it from memory. First copy `.agents/skills/wireframe/template/viewer.html` to `./wireframe.html`, then edit the copied file in place.
+Do not visually inspect `viewer.html` and recreate it from memory. On the first generation, copy `.agents/skills/wireframe/template/viewer.html` to `./wireframe.html`, then edit the copied file in place. On later STN-only updates, keep the existing `wireframe.html` shell and replace only the generated slots unless the viewer template itself changed or the existing shell fails verification.
 
 On Windows, do not generate or replace long HTML/CSS/JSON payloads with inline PowerShell commands. PowerShell is unreliable for long strings, quotes, and escaping in this workflow. Use a Node.js script as the default path for reading the template, replacing slots, serializing JSON payloads, and writing `wireframe.html`.
 
@@ -144,7 +144,7 @@ Mandatory shell-preservation rules:
 - Treat `.wf-*` styles as a fallback starting point, not a constraint on generated output.
 - Generate additional CSS classes for the actual wireframe when the STN calls for richer layout or domain-specific controls.
 - Preserve zoom, fit, width slider, mouse wheel zoom, and space/middle-button pan behavior exactly as provided by `template/viewer.html`.
-- Replace only these template slots during normal generation:
+- Replace only these template slots during normal generation and STN-only incremental updates:
   - `<meta name="wf-generated" content="">` with the current timestamp.
   - `<style id="wf-generated-style"></style>` with generated wireframe CSS when needed.
   - `<script id="wf-docs-tpl" type="application/json">[]</script>` with the generated documents payload.
@@ -207,11 +207,13 @@ Report:
 When `wireframe.html` already exists:
 
 1. Inspect `<meta name="wf-generated">` and the existing `wf-data` payload if present.
-2. Use `git diff --name-only HEAD@{"<wf-generated timestamp>"} -- design/` when available to identify changed design files.
+2. Identify changed design files using `git diff --name-only -- design/` and `git status --short -- design/` when available. If that is not enough, compare file mtimes against the generated timestamp.
 3. If no design files changed and the viewer structure does not need changes, report `wireframe is up to date`.
-4. Otherwise, read the changed files, regenerate the documents payload, copy `template/viewer.html` to `wireframe.html`, and inject the updated payload slots.
-5. Preserve previous UI intent decisions from `wf-data` when they still match the STN context.
-6. Do not patch the existing `wireframe.html` shell as the primary update path; recopy the template so viewer controls stay in sync.
+4. If only STN/design content changed, read the changed files plus any directly referenced components or `GLOBAL.md`, then update only the generated slots in the existing `wireframe.html`.
+5. Preserve unchanged document payload entries from the existing `wf-docs-tpl` where their source files did not change and their referenced components did not change.
+6. Preserve previous UI intent decisions from `wf-data` when they still match the STN context.
+7. Recopy `template/viewer.html` only when `wireframe.html` is missing, the existing shell fails verification, `template/viewer.html` changed, or the user explicitly asks to refresh the viewer shell.
+8. When recopying the shell, inject the current generated CSS, document payload, and `wf-data` slots after the copy so existing documents are not lost.
 
 ## Render Type Vocabulary
 
