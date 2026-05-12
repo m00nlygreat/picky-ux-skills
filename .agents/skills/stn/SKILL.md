@@ -186,6 +186,171 @@ Desktop is the default. Use `@mobile(...)` to override only the differences.
 - Extensible with `@tablet(...)` and other breakpoints using the same pattern
 - Most cases are covered by two modifiers: replace (`->`) and hide (`hidden`)
 
+## Markdown Bundle Compilation
+
+STN compilation means bundling related Markdown sources into a single Markdown document for agent consumption. It does not inline, replace, render, or semantically reinterpret STN nodes.
+
+Use compilation when a downstream skill or agent needs enough context to understand one screen or the whole app without repeatedly opening `GLOBAL.md` and component files.
+
+Do not manually compile STN bundles by copying Markdown in the chat context. Use the compiler script whenever it is available:
+
+```bash
+python .agents/skills/stn/scripts/compile_stn.py --project-root . --screen ProductList
+python .agents/skills/stn/scripts/compile_stn.py --project-root . --app
+python .agents/skills/stn/scripts/compile_stn.py --project-root . --all
+```
+
+- `--screen {Name}` generates one screen bundle. Repeat it to generate multiple selected screens.
+- `--app` generates all screen bundles and `.stn/compiled/app.md`.
+- `--all` is the default when no target is provided; it generates all screen bundles and the app bundle.
+
+### Output Layout
+
+Use this default generated structure:
+
+```text
+.stn/
+  compiled/
+    manifest.json
+    app.md
+    screens/
+      ProductList.md
+```
+
+- `.stn/compiled/screens/{ScreenName}.md` contains one screen plus the references it uses.
+- `.stn/compiled/app.md` contains all screens plus shared references.
+- `.stn/compiled/manifest.json` indexes generated files, sources, dependencies, and diagnostics.
+
+Compiled files are generated artifacts. Do not treat them as the source of truth when editing STN.
+
+### Screen Bundle
+
+For `design/{ScreenName}.md`, create `.stn/compiled/screens/{ScreenName}.md`.
+
+The generated document should use this shape:
+
+```markdown
+# Compiled Screen: ProductList
+
+## Main
+
+<!-- source: design/ProductList.md -->
+
+{original screen markdown}
+
+## References
+
+### GLOBAL
+
+<!-- source: design/GLOBAL.md -->
+
+{original GLOBAL.md markdown}
+
+### Component: ProductCard
+
+<!-- source: design/components/ProductCard.md -->
+
+{original component markdown}
+
+## Diagnostics
+
+{missing references or warnings, if any}
+```
+
+Rules:
+
+- Keep the screen file content unchanged under `## Main`, including frontmatter, headings, comments, and STN body.
+- If the screen contains `<GLOBAL />`, attach `design/GLOBAL.md` under `## References`.
+- Attach only component files declared in the screen frontmatter `imports`.
+- Do not replace `<GLOBAL />` with `GLOBAL.md` content.
+- Do not replace `<ComponentName "instruction" />` with component content.
+- Do not rewrite component roots, instruction strings, bindings, annotations, or indentation.
+- Attach each referenced document at most once.
+- If a reference is missing or unreadable, keep generating the bundle and record the issue under `## Diagnostics`.
+- By default, do not recursively follow component references inside component files. A compiler may support an explicit deep mode, but shallow screen imports are the default.
+
+### App Bundle
+
+For app-level compilation, create `.stn/compiled/app.md`.
+
+The generated document should use this shape:
+
+```markdown
+# Compiled STN App
+
+## Screens
+
+### Screen: ProductList
+
+<!-- source: design/ProductList.md -->
+
+{original screen markdown}
+
+### Screen: Settings
+
+<!-- source: design/Settings.md -->
+
+{original screen markdown}
+
+## References
+
+### GLOBAL
+
+<!-- source: design/GLOBAL.md -->
+
+{original GLOBAL.md markdown}
+
+### Component: ProductCard
+
+<!-- source: design/components/ProductCard.md -->
+
+{original component markdown}
+
+## Diagnostics
+
+{missing references or warnings, if any}
+```
+
+Rules:
+
+- Treat `design/*.md` files as screens, excluding `GLOBAL.md`.
+- Do not treat files under `design/components/` as screens.
+- Include screens in filename-sorted order unless the caller provides an explicit order.
+- Collect references from all included screens.
+- Attach `GLOBAL.md` once if any included screen contains `<GLOBAL />`.
+- Attach each imported component once, even when multiple screens import it.
+- Preserve every source document exactly as Markdown text.
+- Do not inline, expand, deduplicate, or normalize STN element trees.
+
+### Manifest
+
+Generate `manifest.json` with enough information for agents to open only the compiled document they need.
+
+```json
+{
+  "generatedAt": "2026-05-13T00:00:00+09:00",
+  "screens": [
+    {
+      "name": "ProductList",
+      "source": "design/ProductList.md",
+      "compiled": ".stn/compiled/screens/ProductList.md",
+      "sources": [
+        "design/ProductList.md",
+        "design/GLOBAL.md",
+        "design/components/ProductCard.md"
+      ]
+    }
+  ],
+  "app": {
+    "compiled": ".stn/compiled/app.md",
+    "screenCount": 1
+  },
+  "diagnostics": []
+}
+```
+
+Manifest paths should be workspace-relative and use `/` separators.
+
 ## Validation Rules
 
 A well-formed STN must satisfy:
