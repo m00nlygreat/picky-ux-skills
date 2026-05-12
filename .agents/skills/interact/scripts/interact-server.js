@@ -62,6 +62,7 @@ async function main() {
     const result = {
       id: interaction.id,
       url: `${state.url}/i/${encodeURIComponent(interaction.id)}`,
+      markdownLink: `[Open interact GUI](${state.url}/i/${encodeURIComponent(interaction.id)})`,
       answerFile: path.join(dirs.answers, `${interaction.id}.json`),
       stateFile: dirs.stateFile,
     };
@@ -110,12 +111,15 @@ async function ensureServer(root, args) {
   const existing = await readState(dirs);
   if (existing) {
     const live = await pingState(existing);
-    if (live) return live;
+    if (live && sameRoot(live.root, root)) {
+      await writeJson(dirs.stateFile, live);
+      return live;
+    }
   }
 
   const host = args.host || DEFAULT_HOST;
   const preferredPort = Number(args.port || existing?.port || DEFAULT_PORT);
-  const port = await findAvailablePort(host, preferredPort);
+  const port = await findAvailablePort(host, preferredPort, root);
   const logFile = path.join(dirs.dir, "server.log");
 
   const child = childProcess.spawn(process.execPath, [__filename, "serve", "--host", host, "--port", String(port), "--root", root], {
@@ -131,7 +135,10 @@ async function ensureServer(root, args) {
   while (Date.now() < deadline) {
     await sleep(200);
     const live = await pingState({ url });
-    if (live) return live;
+    if (live && sameRoot(live.root, root)) {
+      await writeJson(dirs.stateFile, live);
+      return live;
+    }
   }
 
   throw new Error(`Server did not become ready. See ${logFile}`);
@@ -175,6 +182,7 @@ async function serve(root, options) {
           ok: true,
           id: payload.id,
           url: `${url}/i/${encodeURIComponent(payload.id)}`,
+          markdownLink: `[Open interact GUI](${url}/i/${encodeURIComponent(payload.id)})`,
         });
       }
 
@@ -241,6 +249,7 @@ async function buildState(dirs, { host, port, startedAt }) {
     host,
     port,
     url: `http://${host}:${port}`,
+    markdownLink: `[Open interact GUI](http://${host}:${port})`,
     root: dirs.root,
     activeInteractionId: active?.id || null,
     startedAt,
@@ -401,13 +410,26 @@ async function pingState(state) {
   }
 }
 
-async function findAvailablePort(host, startPort) {
+async function findAvailablePort(host, startPort, root) {
   for (let port = startPort; port < startPort + 50; port += 1) {
     const occupiedByInteract = await pingState({ url: `http://${host}:${port}` });
-    if (occupiedByInteract) return port;
+    if (occupiedByInteract) {
+      if (sameRoot(occupiedByInteract.root, root)) return port;
+      continue;
+    }
     if (await canListen(host, port)) return port;
   }
   throw new Error(`No available port found from ${startPort} to ${startPort + 49}`);
+}
+
+function sameRoot(left, right) {
+  if (!left || !right) return false;
+  const leftPath = path.resolve(String(left));
+  const rightPath = path.resolve(String(right));
+  if (process.platform === "win32") {
+    return leftPath.toLowerCase() === rightPath.toLowerCase();
+  }
+  return leftPath === rightPath;
 }
 
 function canListen(host, port) {

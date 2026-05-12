@@ -15,8 +15,9 @@ Run commands from the project root. The server and answer files are project-scop
 2. Ensure the server is running or let `ask` start it.
 3. Send the schema with `ask`.
 4. Open the returned URL for the user, preferably with the in-app browser when available.
-5. Wait for the answer with `wait` or use `ask --wait`.
-6. Read the returned JSON and continue the original task.
+5. When telling the user where to answer, provide the local server address as a Markdown link, such as `[Open interact GUI](http://127.0.0.1:5199/i/example)`. Do not show a bare localhost URL as the user-facing instruction.
+6. Wait for the answer with `wait` or use `ask --wait`.
+7. Read the returned JSON and continue the original task.
 
 ## Commands
 
@@ -42,9 +43,12 @@ node .agents/skills/interact/scripts/interact-server.js ask --schema-json '{"tit
 {
   "id": "interaction-id",
   "url": "http://127.0.0.1:5199/i/interaction-id",
+  "markdownLink": "[Open interact GUI](http://127.0.0.1:5199/i/interaction-id)",
   "answerFile": ".interact/answers/interaction-id.json"
 }
 ```
+
+Use `markdownLink` when writing an interim user update.
 
 ## Schema
 
